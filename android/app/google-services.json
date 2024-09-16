@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "429437450152",
+    "project_id": "cursor-c2233",
+    "storage_bucket": "cursor-c2233.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429437450152:android:ee8b5befdf729eccab8f9d",
+        "android_client_info": {
+          "package_name": "cursor.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9TLliimKFPBVGLGxWWK_3ZIQf3CCwSS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
