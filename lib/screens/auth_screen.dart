@@ -85,10 +85,11 @@ class _AuthScreenState extends State<AuthScreen> {
                   Text('Verification email sent. Please check your inbox.')),
         );
       }
-    } catch (e) {
-      print(e);
+    } catch (e, stacktrace) {
+      print('Error: $e');
+      print('Stacktrace: $stacktrace');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred. Please try again.')),
+        SnackBar(content: Text('An error occurred: $e')),
       );
     }
   }
