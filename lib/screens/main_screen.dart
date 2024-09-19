@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_screen.dart';
+import 'auth/auth_screen.dart';
 
 class MainScreen extends StatelessWidget {
   final _auth = FirebaseAuth.instance;

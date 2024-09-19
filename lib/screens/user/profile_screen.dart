@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_screen.dart';
+import '../auth/auth_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final _auth = FirebaseAuth.instance;

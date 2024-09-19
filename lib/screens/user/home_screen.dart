@@ -1,7 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'main_screen.dart';
+import '../main_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
