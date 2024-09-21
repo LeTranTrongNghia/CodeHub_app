@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:project_new/screens/user/course_screen.dart';
+import 'package:project_new/screens/user/profile_screen.dart';
 import 'problems_screen.dart';
 import 'solve_screen.dart';
 
@@ -16,8 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _searchController = TextEditingController();
   List<DocumentSnapshot> _allProblems = [];
-  List<DocumentSnapshot> _filteredProblems = [];
   List<DocumentSnapshot> _randomProblems = [];
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -39,24 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _allProblems = problems;
-      _filteredProblems = _allProblems;
       _randomProblems = _allProblems..shuffle();
       _randomProblems = _randomProblems.take(5).toList();
     });
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredProblems = _allProblems.where((problem) {
-        final title = problem['title'].toString().toLowerCase();
-        final type = problem['type'].toString().toLowerCase();
-        final difficulty = problem['difficulty'].toString().toLowerCase();
-        return title.contains(query) ||
-            type.contains(query) ||
-            difficulty.contains(query);
-      }).toList();
-    });
+    _searchController.text.toLowerCase();
+    setState(() {});
   }
 
   Color _getDifficultyColor(String difficulty) {
@@ -82,6 +74,35 @@ class _HomeScreenState extends State<HomeScreen> {
         return BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 10);
       default:
         return BoxShadow(color: Colors.transparent);
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+        break;
+      case 1:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProblemsScreen()),
+        );
+        break;
+      case 2:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => CourseScreen()),
+        );
+        break;
+      case 3:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProfileScreen()),
+        );
+        break;
     }
   }
 
@@ -113,27 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Search',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _fetchProblems,
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: ListView.builder(
               itemCount: _randomProblems.length,
@@ -180,6 +180,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.black),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment, color: Colors.black),
+            label: 'Problems',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book, color: Colors.black),
+            label: 'Courses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, color: Colors.black),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        onTap: _onItemTapped,
       ),
     );
   }

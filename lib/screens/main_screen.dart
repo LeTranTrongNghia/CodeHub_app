@@ -50,8 +50,7 @@ class MainScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundImage:
-                              NetworkImage(photoURL ?? defaultPhotoURL),
+                          backgroundImage: NetworkImage(photoURL),
                         ),
                         const SizedBox(height: 20),
                         Text(

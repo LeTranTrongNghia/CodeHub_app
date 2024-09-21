@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:project_new/screens/user/course_screen.dart';
+import 'package:project_new/screens/user/home_screen.dart';
+import 'package:project_new/screens/user/profile_screen.dart';
 import 'solve_screen.dart';
 
 class ProblemsScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<DocumentSnapshot> _allProblems = [];
   List<DocumentSnapshot> _filteredProblems = [];
+  int _selectedIndex = 1;
 
   @override
   void initState() {
@@ -74,6 +78,35 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
         return BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 10);
       default:
         return BoxShadow(color: Colors.transparent);
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+        break;
+      case 1:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProblemsScreen()),
+        );
+        break;
+      case 2:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => CourseScreen()),
+        );
+        break;
+      case 3:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProfileScreen()),
+        );
+        break;
     }
   }
 
@@ -163,6 +196,29 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.black),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment, color: Colors.black),
+            label: 'Problems',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book, color: Colors.black),
+            label: 'Courses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, color: Colors.black),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        onTap: _onItemTapped,
       ),
     );
   }

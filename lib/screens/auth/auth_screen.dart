@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print, prefer_const_constructors, unused_import
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,8 +14,10 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   String email = '';
   String password = '';
   String confirmPassword = '';
@@ -27,29 +29,12 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       if (isLogin) {
         userCredential = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
         );
         if (userCredential.user != null && userCredential.user!.emailVerified) {
-          final userDoc = await _firestore
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .get();
-          final userData = userDoc.data() as Map<String, dynamic>;
-          final userRole = userData['role'];
-
-          if (userRole == 'admin') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => AdminScreen()),
-            );
-          } else {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please verify your email first.')),
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => HomeScreen()),
           );
         }
       } else {
@@ -61,8 +46,8 @@ class _AuthScreenState extends State<AuthScreen> {
         }
 
         userCredential = await _auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
         );
 
         await userCredential.user!.sendEmailVerification();
@@ -134,33 +119,21 @@ class _AuthScreenState extends State<AuthScreen> {
                 },
               ),
             TextField(
-              keyboardType: TextInputType.emailAddress,
+              controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
-              onChanged: (value) {
-                setState(() {
-                  email = value;
-                });
-              },
+              keyboardType: TextInputType.emailAddress,
             ),
             TextField(
-              obscureText: true,
+              controller: _passwordController,
               decoration: const InputDecoration(labelText: 'Password'),
-              onChanged: (value) {
-                setState(() {
-                  password = value;
-                });
-              },
+              obscureText: true,
             ),
             if (!isLogin)
               TextField(
-                obscureText: true,
+                controller: _passwordController,
                 decoration:
                     const InputDecoration(labelText: 'Confirm Password'),
-                onChanged: (value) {
-                  setState(() {
-                    confirmPassword = value;
-                  });
-                },
+                obscureText: true,
               ),
             const SizedBox(height: 20),
             ElevatedButton(
