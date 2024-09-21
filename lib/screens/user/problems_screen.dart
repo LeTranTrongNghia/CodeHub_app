@@ -1,23 +1,19 @@
-// ignore_for_file: library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'problems_screen.dart';
 import 'solve_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
+class ProblemsScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _ProblemsScreenState createState() => _ProblemsScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ProblemsScreenState extends State<ProblemsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _searchController = TextEditingController();
   List<DocumentSnapshot> _allProblems = [];
   List<DocumentSnapshot> _filteredProblems = [];
-  List<DocumentSnapshot> _randomProblems = [];
 
   @override
   void initState() {
@@ -35,13 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fetchProblems() async {
     final snapshot = await _firestore.collection('problems').get();
-    final problems = snapshot.docs;
-
     setState(() {
-      _allProblems = problems;
+      _allProblems = snapshot.docs;
       _filteredProblems = _allProblems;
-      _randomProblems = _allProblems..shuffle();
-      _randomProblems = _randomProblems.take(5).toList();
     });
   }
 
@@ -89,17 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('Problems'),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => ProblemsScreen()),
-              );
-            },
-            child:
-                const Text('View All', style: TextStyle(color: Colors.white)),
-          ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -136,9 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: _randomProblems.length,
+              itemCount: _filteredProblems.length,
               itemBuilder: (context, index) {
-                final problem = _randomProblems[index];
+                final problem = _filteredProblems[index];
                 final difficulty = problem['difficulty'];
                 return Card(
                   child: ListTile(
