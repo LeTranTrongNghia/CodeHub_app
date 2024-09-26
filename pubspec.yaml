@@ -39,6 +39,7 @@ dependencies:
   firebase_auth: ^5.2.1
   cloud_firestore: ^5.4.1
   cached_network_image: ^3.4.1
+  youtube_player_flutter: ^9.1.0
 
 dev_dependencies:
   flutter_test:
