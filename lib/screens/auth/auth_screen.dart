@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../admin/admin_screen.dart';
 import '../user/home_screen.dart';
 
@@ -79,6 +80,52 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      // Check if the user is null (sign-in was canceled)
+      if (googleUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign-in was canceled.')),
+        );
+        return; // Exit the method if sign-in was canceled
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
+      // Store user information in Firestore
+      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        'id': userCredential.user!.uid,
+        'username': userCredential.user!.displayName ?? 'User',
+        'email': userCredential.user!.email,
+        'avatar': userCredential.user!.photoURL ?? '',
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+        'role': 'user',
+      });
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (e) {
+      print('Google Sign-In Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred during Google sign-in: $e')),
+      );
+    }
+  }
+
   void _resetPassword() async {
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,6 +187,12 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: _submitAuthForm,
               child: Text(isLogin ? 'Login' : 'Sign Up'),
             ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _signInWithGoogle,
+              child: const Text('Login with Google'),
+            ),
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () {
                 setState(() {
