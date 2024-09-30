@@ -39,6 +39,12 @@ dependencies:
   firebase_auth: ^5.2.1
   cloud_firestore: ^5.4.1
   cached_network_image: ^3.4.1
+  youtube_player_flutter: ^9.1.0
+  flutter_code_editor: ^0.3.2
+  shared_preferences: ^2.3.2
+  fl_chart: ^0.69.0
+  flutter_dotenv: ^5.1.0
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -63,8 +69,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

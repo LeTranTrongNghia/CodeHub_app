@@ -1,9 +1,10 @@
-// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, deprecated_member_use, unused_import
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'home_screen.dart';
+import 'lecture_screen.dart';
 import 'problems_screen.dart';
 import 'profile_screen.dart';
 
@@ -72,9 +73,14 @@ class _CourseScreenState extends State<CourseScreen> {
         );
         break;
       case 2:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => CourseScreen()),
-        );
+        if (_filteredCourses.isNotEmpty) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => LectureScreen(
+                  courseId: _filteredCourses[index].id), // Pass the course ID
+            ),
+          );
+        }
         break;
       case 3:
         Navigator.of(context).pushReplacement(
@@ -159,13 +165,25 @@ class _CourseScreenState extends State<CourseScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: CachedNetworkImage(
-                            imageUrl: course['image_cover'],
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Center(child: CircularProgressIndicator()),
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error),
+                          child: GestureDetector(
+                            onTap: () {
+                              // Navigate to LectureScreen instead of launching the URL
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => LectureScreen(
+                                      courseId:
+                                          course.id), // Pass the course ID
+                                ),
+                              );
+                            },
+                            child: CachedNetworkImage(
+                              imageUrl: course['image_cover'],
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.error),
+                            ),
                           ),
                         ),
                       ],
