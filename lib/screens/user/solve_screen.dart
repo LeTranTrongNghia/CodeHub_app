@@ -1,19 +1,19 @@
-// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print
+// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_code_editor/flutter_code_editor.dart'; // Add this import
+import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:highlight/src/mode.dart';
-import 'package:http/http.dart' as http; // Add this import
-import 'dart:convert'; // Add this import
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
 import 'package:highlight/languages/java.dart';
 import 'package:highlight/languages/python.dart';
 import 'package:highlight/languages/javascript.dart';
 import 'package:highlight/languages/php.dart';
 import 'package:highlight/languages/typescript.dart';
-import 'package:fl_chart/fl_chart.dart'; // Add this import for charting
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 const LANGUAGE_VERSIONS = {
   'java': '15.0.2',
