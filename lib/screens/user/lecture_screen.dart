@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// Add this import
+import 'quiz_screen.dart'; // Add this import
 
 class LectureScreen extends StatefulWidget {
   final String courseId;
@@ -87,6 +89,21 @@ class _LectureScreenState extends State<LectureScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Lectures'),
+        actions: [
+          // Add this section for the quiz button
+          IconButton(
+            icon: Icon(Icons.quiz),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => QuizScreen(
+                      courseId: widget.courseId), // Navigate to QuizScreen
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

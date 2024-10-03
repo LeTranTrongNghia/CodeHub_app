@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print, prefer_const_constructors, unused_import
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print, prefer_const_constructors, unused_import, use_rethrow_when_possible
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -104,16 +104,8 @@ class _AuthScreenState extends State<AuthScreen> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // Store user information in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'id': userCredential.user!.uid,
-        'username': userCredential.user!.displayName ?? 'User',
-        'email': userCredential.user!.email,
-        'avatar': userCredential.user!.photoURL ?? '',
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-        'role': 'user',
-      });
+      // Retry mechanism for fetching user data
+      await _fetchUserDataWithRetry(userCredential.user!.uid);
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -123,6 +115,29 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred during Google sign-in: $e')),
       );
+    }
+  }
+
+  Future<void> _fetchUserDataWithRetry(String userId) async {
+    int attempts = 0;
+    const int maxAttempts = 5;
+    const Duration delay = Duration(seconds: 2);
+
+    while (attempts < maxAttempts) {
+      try {
+        // Store user information in Firestore
+        final userDoc = await _firestore.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          // Process user data if needed
+          break; // Exit loop if successful
+        }
+      } catch (e) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw e; // Rethrow the error if max attempts reached
+        }
+        await Future.delayed(delay * attempts); // Exponential backoff
+      }
     }
   }
 

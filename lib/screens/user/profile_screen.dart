@@ -1,4 +1,4 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously, use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously, use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,6 +18,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _firestore = FirebaseFirestore.instance;
 
   int _selectedIndex = 3;
+
+  String photoURLValue = ''; // Define the photoURLValue variable
 
   void _onItemTapped(int index) {
     setState(() {
@@ -151,7 +153,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final userData = snapshot.data!;
           final String displayName = userData['username'] ?? 'User';
-          final String photoURL = userData['avatar']?.isNotEmpty == true
+          final String photoURLValueValue = userData['avatar']?.isNotEmpty ==
+                  true
               ? userData['avatar']
               : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOpAOxfF3g-Q1Q1BmzgYl2_pyqwvUjvVv_vg&s';
 
@@ -176,7 +179,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             CircleAvatar(
                               radius: 50,
-                              backgroundImage: NetworkImage(photoURL),
+                              backgroundImage: NetworkImage(userData['avatar']
+                                          ?.isNotEmpty ==
+                                      true
+                                  ? userData['avatar']
+                                  : 'https://example.com/fallback_image.png'), // Fallback image if avatar is empty
+                              onBackgroundImageError: (error, stackTrace) {
+                                // Handle image loading error
+                                setState(() {
+                                  // Set a fallback image or handle the error
+                                  photoURLValue =
+                                      'https://example.com/fallback_image.png'; // Replace with your fallback image URL
+                                });
+                              },
                             ),
                             const SizedBox(height: 20),
                             Text(
