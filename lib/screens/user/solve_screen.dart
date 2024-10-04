@@ -14,6 +14,7 @@ import 'package:highlight/languages/php.dart';
 import 'package:highlight/languages/typescript.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart'; // Import for Clipboard
 
 const LANGUAGE_VERSIONS = {
   'java': '15.0.2',
@@ -42,6 +43,10 @@ class _SolveScreenState extends State<SolveScreen> {
   double performanceRating = 0;
   double clarityRating = 0;
 
+  bool isChatOpen = false; // Track if chat is open
+  String chatInput = ''; // Input for chat
+  List<String> chatHistory = []; // Store chat history
+
   @override
   void initState() {
     super.initState();
@@ -65,106 +70,219 @@ class _SolveScreenState extends State<SolveScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Title: ${widget.problem['title']}',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Type: ${widget.problem['type']}',
-                style: TextStyle(fontSize: 18),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Difficulty: ${widget.problem['difficulty']}',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: _getDifficultyColor(widget.problem['difficulty']),
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Statement: ${widget.problem['statement'] ?? 'No statement available'}',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Constraints:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              ..._buildConstraints(widget.problem['constraints']),
-              SizedBox(height: 10),
-              Text(
-                'Test Cases:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              ..._buildTestCases(widget.problem['testCases']),
-              // Code Editor Section
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween, // Aligns items
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            isChatOpen = !isChatOpen; // Toggle chat visibility
+          });
+        },
+        child: Icon(Icons.chat),
+      ),
+      body: Stack(
+        children: [
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DropdownButton<String>(
-                    value: selectedLanguage,
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          selectedLanguage = newValue;
-                          controller.language = _getLanguageMode(
-                              newValue); // Update language in controller
-                        });
-                      }
-                    },
-                    items: <String>[
-                      'java',
-                      'javascript',
-                      'python',
-                      'php',
-                      'typescript'
-                    ].map<DropdownMenuItem<String>>((value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                  Text(
+                    'Title: ${widget.problem['title']}',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await _runCode(); // Call the function to run the code
-                    },
-                    child: Text('Run'),
+                  SizedBox(height: 10),
+                  Text(
+                    'Type: ${widget.problem['type']}',
+                    style: TextStyle(fontSize: 18),
                   ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Difficulty: ${widget.problem['difficulty']}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: _getDifficultyColor(widget.problem['difficulty']),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Statement: ${widget.problem['statement'] ?? 'No statement available'}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Constraints:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  ..._buildConstraints(widget.problem['constraints']),
+                  SizedBox(height: 10),
+                  Text(
+                    'Test Cases:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  ..._buildTestCases(widget.problem['testCases']),
+                  // Code Editor Section
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween, // Aligns items
+                    children: [
+                      DropdownButton<String>(
+                        value: selectedLanguage,
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedLanguage = newValue;
+                              controller.language = _getLanguageMode(
+                                  newValue); // Update language in controller
+                            });
+                          }
+                        },
+                        items: <String>[
+                          'java',
+                          'javascript',
+                          'python',
+                          'php',
+                          'typescript'
+                        ].map<DropdownMenuItem<String>>((value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await _runCode(); // Call the function to run the code
+                        },
+                        child: Text('Run'),
+                      ),
+                    ],
+                  ),
+                  CodeTheme(
+                    data: CodeThemeData(
+                        styles: monokaiSublimeTheme), // Apply the theme
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight:
+                            300, // Set a maximum height to prevent overflow
+                      ),
+                      child: SingleChildScrollView(
+                        child: CodeField(
+                          controller: controller, // Use the controller
+                          onChanged: (value) {
+                            code = value; // Capture the code input
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result), // Display the result here
+                    ),
+                  ),
+                  // Add more fields as necessary
                 ],
               ),
-              CodeTheme(
-                data: CodeThemeData(
-                    styles: monokaiSublimeTheme), // Apply the theme
-                child: SingleChildScrollView(
-                  child: CodeField(
-                    controller: controller, // Use the controller
-                    onChanged: (value) {
-                      code = value; // Capture the code input
-                    },
+            ),
+          ),
+          // Chat interface
+          if (isChatOpen)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isChatOpen = false; // Close chat on background tap
+                });
+              },
+              child: Container(
+                color: Colors.black54, // Dark background
+                child: Center(
+                  child: Container(
+                    width: 300, // Set a fixed width for the chat dialog
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Chat history
+                        Container(
+                          constraints: BoxConstraints(
+                            maxHeight:
+                                300, // Set a maximum height for the chat history
+                          ),
+                          child: ListView.builder(
+                            itemCount: chatHistory.length,
+                            itemBuilder: (context, index) {
+                              String message = chatHistory[index];
+
+                              if (message.startsWith('You:')) {
+                                // User message
+                                return _buildUserMessage(
+                                    message.replaceFirst('You: ', ''));
+                              } else if (message.startsWith('Guide:')) {
+                                // Guide message
+                                String guideContent =
+                                    message.replaceFirst('Guide: ', '');
+                                return _buildFormattedText(guideContent);
+                              } else {
+                                // Other messages
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4.0),
+                                  child: Text(message),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        // Input and buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                onChanged: (value) {
+                                  chatInput = value;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Ask a question...',
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.send),
+                              onPressed: () async {
+                                if (chatInput.trim().isNotEmpty) {
+                                  setState(() {
+                                    chatHistory.add('You: $chatInput');
+                                  });
+                                  await generateAnswer(chatInput);
+                                  setState(() {
+                                    chatInput =
+                                        ''; // Clear the input field after sending
+                                  });
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.lightbulb),
+                              onPressed: () async {
+                                await guideCode();
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(result), // Display the result here
-                ),
-              ),
-              // Add more fields as necessary
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -447,9 +565,9 @@ class _SolveScreenState extends State<SolveScreen> {
         children: [
           Text('Test Case ${index + 1}:',
               style: TextStyle(fontWeight: FontWeight.bold)),
-          Text('Explanation: ${testCase['explanation']}'),
           Text('Input: ${testCase['inputText']}'),
           Text('Output: ${testCase['outputText']}'),
+          Text('Explanation: ${testCase['explanation']}'),
           SizedBox(height: 10),
         ],
       );
@@ -484,5 +602,239 @@ class _SolveScreenState extends State<SolveScreen> {
       default:
         return javascript; // Fallback to JavaScript
     }
+  }
+
+  Future<void> generateAnswer(String question) async {
+    setState(() {
+      chatHistory
+          .add('Gemini is thinking... \n It might take up to 10 seconds.');
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${dotenv.env['VITE_API_GENERATIVE_LANGUAGE_CLIENT']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text':
+                      'Imagine you are an AI coding assistant named CodeHub. This is the coding problem I\'m doing right now:\n' +
+                          'Title: ' +
+                          widget.problem['title'] +
+                          '\n' +
+                          'Statement: ' +
+                          widget.problem['statement'] +
+                          '\n' +
+                          'Answer the question: ' +
+                          question,
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final answer = jsonDecode(response.body)['candidates'][0]['content']
+            ['parts'][0]['text'];
+        setState(() {
+          chatHistory.removeLast(); // Remove the thinking message
+          chatHistory.add('Gemini: $answer');
+        });
+      } else {
+        setState(() {
+          chatHistory.removeLast(); // Remove the thinking message
+          chatHistory
+              .add('Gemini: Sorry - Something went wrong. Please try again!');
+        });
+      }
+    } catch (error) {
+      print(error);
+      setState(() {
+        chatHistory.removeLast(); // Remove the thinking message
+        chatHistory
+            .add('Gemini: Sorry - Something went wrong. Please try again!');
+      });
+    }
+  }
+
+  Future<void> guideCode() async {
+    setState(() {
+      chatHistory.add('You: Generate Guide');
+      chatHistory.add('Generating guide... \n It might take up to 10 seconds.');
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${dotenv.env['VITE_API_GENERATIVE_LANGUAGE_CLIENT']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text': 'Imagine you are a professor majoring in Information Technology. Teach me how to solve this problem:\n' +
+                      'Title: ' +
+                      widget.problem['title'] +
+                      '\n' +
+                      'Statement: ' +
+                      widget.problem['statement'] +
+                      '\n' +
+                      "Show me ideas and step-by-step instructions to help me find a way to solve a code problem. Don't write out hint code or example code, let me write it myself.",
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final guide = jsonDecode(response.body)['candidates'][0]['content']
+            ['parts'][0]['text'];
+        setState(() {
+          chatHistory.removeLast(); // Remove the generating guide message
+          chatHistory.add('Guide: $guide');
+        });
+      } else {
+        setState(() {
+          chatHistory.removeLast(); // Remove the generating guide message
+          chatHistory
+              .add("Guide: Sorry - Couldn't generate guide at this time.");
+        });
+      }
+    } catch (error) {
+      print(error);
+      setState(() {
+        chatHistory.removeLast(); // Remove the generating guide message
+        chatHistory.add("Guide: Sorry - Couldn't generate guide at this time.");
+      });
+    }
+  }
+
+  // Function to build formatted text with code snippets and bold text
+  Widget _buildFormattedText(String content) {
+    List<Widget> children = [];
+    List<String> parts = content.split('```');
+
+    for (int i = 0; i < parts.length; i++) {
+      if (i % 2 == 0) {
+        // Regular text with bold formatting
+        children.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: _buildRichText(parts[i]),
+        ));
+      } else {
+        // Code block
+        children.add(_buildCodeSnippet(parts[i]));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  // Function to build rich text with bold formatting
+  Widget _buildRichText(String text) {
+    final boldPatterns = [
+      RegExp(r'\*\*(.*?)\*\*'), // Matches **text**
+      RegExp(r'##(.*?)##'), // Matches ##text##
+    ];
+    final spans = <TextSpan>[];
+    int start = 0;
+
+    while (start < text.length) {
+      int closestMatchStart = text.length;
+      Match? closestMatch;
+      for (final pattern in boldPatterns) {
+        final match = pattern.firstMatch(text.substring(start));
+        if (match != null && match.start < closestMatchStart) {
+          closestMatchStart = match.start;
+          closestMatch = match;
+        }
+      }
+
+      if (closestMatch != null) {
+        if (closestMatch.start > 0) {
+          spans.add(TextSpan(
+              text: text.substring(start, start + closestMatch.start)));
+        }
+        spans.add(TextSpan(
+          text: closestMatch.group(1),
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ));
+        start += closestMatch.end;
+      } else {
+        spans.add(TextSpan(text: text.substring(start)));
+        break;
+      }
+    }
+
+    return RichText(
+      text: TextSpan(style: TextStyle(color: Colors.black), children: spans),
+    );
+  }
+
+  // Function to build the code snippet widget
+  Widget _buildCodeSnippet(String codeContent) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      margin: EdgeInsets.symmetric(vertical: 4.0),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: Colors.grey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Code Snippet',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: Icon(Icons.copy),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: codeContent));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Code copied to clipboard!')),
+                  );
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            codeContent,
+            style: TextStyle(
+                fontFamily: 'Courier', fontSize: 14), // Monospace font
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Function to build user message widget
+  Widget _buildUserMessage(String message) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      margin: EdgeInsets.symmetric(vertical: 4.0),
+      decoration: BoxDecoration(
+        color: Colors.blue[100],
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(color: Colors.black),
+      ),
+    );
   }
 }
