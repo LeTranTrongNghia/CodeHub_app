@@ -1,4 +1,4 @@
-// ignore_for_file: depend_on_referenced_packages, prefer_const_constructors_in_immutables, use_key_in_widget_constructors, library_private_types_in_public_api, avoid_print, prefer_const_constructors
+// ignore_for_file: depend_on_referenced_packages, prefer_const_constructors_in_immutables, use_key_in_widget_constructors, library_private_types_in_public_api, avoid_print, prefer_const_constructors, unnecessary_brace_in_string_interps, unnecessary_to_list_in_spreads
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
