@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../admin/admin_screen.dart';
 import '../user/home_screen.dart';
+import '../../firebase/firestore_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -64,6 +65,9 @@ class _AuthScreenState extends State<AuthScreen> {
           'updated_at': FieldValue.serverTimestamp(),
           'role': 'user',
         });
+
+        // Call the Firestore service to update user fields
+        await FirestoreService().updateUserFields();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
