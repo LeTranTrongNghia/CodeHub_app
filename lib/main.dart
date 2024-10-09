@@ -5,8 +5,8 @@ import 'firebase/firebase_options.dart';
 import 'screens/auth/auth_screen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure binding is initialized
-  await dotenv.load(fileName: ".env"); // Load the .env file
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Initialize Firebase with options
   await Firebase.initializeApp(

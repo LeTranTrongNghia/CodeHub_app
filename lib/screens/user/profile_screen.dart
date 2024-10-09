@@ -1,4 +1,4 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously, use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, unused_local_variable
+// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously, use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, unused_local_variable, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -55,7 +55,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user != null) {
       final DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user.uid).get();
-      return userDoc.data() as Map<String, dynamic>?;
+      final userData = userDoc.data() as Map<String, dynamic>?;
+
+      if (userData != null) {
+        final String recentSolvedId = userData['recentSolved'] ?? '';
+        if (recentSolvedId.isNotEmpty) {
+          final DocumentSnapshot recentProblem =
+              await _firestore.collection('problems').doc(recentSolvedId).get();
+          userData['recentProblem'] = recentProblem.data();
+        }
+
+        // Remove recentLectureName logic
+      }
+      return userData;
     }
     return null;
   }
@@ -153,10 +165,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final userData = snapshot.data!;
           final String displayName = userData['username'] ?? 'User';
-          final String photoURLValueValue = userData['avatar']?.isNotEmpty ==
-                  true
-              ? userData['avatar']
-              : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOpAOxfF3g-Q1Q1BmzgYl2_pyqwvUjvVv_vg&s';
+          final List<dynamic> solvedProblems = userData['solvedProblems'] ?? [];
+          final List<dynamic> attendedCourses =
+              userData['attendedCourses'] ?? [];
+          final recentProblemData = userData['recentProblem'];
+          final String avatarUrl = userData['avatar'] ?? '';
 
           return Center(
             child: Card(
@@ -166,62 +179,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               margin: const EdgeInsets.all(40),
               child: SizedBox(
-                height: 320, // Adjusted height to prevent overflow
+                height: 450,
                 width: double.infinity,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Stack(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Center(
-                        // Center the content
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              radius: 50,
-                              backgroundImage: NetworkImage(userData['avatar']
-                                          ?.isNotEmpty ==
-                                      true
-                                  ? userData['avatar']
-                                  : 'https://example.com/fallback_image.png'), // Fallback image if avatar is empty
-                              onBackgroundImageError: (error, stackTrace) {
-                                // Handle image loading error
-                                setState(() {
-                                  // Set a fallback image or handle the error
-                                  photoURLValue =
-                                      'https://example.com/fallback_image.png'; // Replace with your fallback image URL
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'Hi, $displayName!',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Email: ${userData['email']}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Role: ${userData['role']}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ],
+                      if (avatarUrl.isNotEmpty)
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage: NetworkImage(avatarUrl),
                         ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Hi, $displayName!',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24),
                       ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => _showEditForm(context, userData),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Courses Attended: ${attendedCourses.length}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Problems Solved: ${solvedProblems.length}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 10),
+                      if (recentProblemData != null)
+                        Text(
+                          'Most Recent Problem: ${recentProblemData['title']}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      ),
+                      // Remove recentLectureName display
                     ],
                   ),
                 ),

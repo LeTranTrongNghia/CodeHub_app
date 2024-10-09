@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors_in_immutables, library_private_types_in_public_api, prefer_const_constructors, avoid_print
+// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors_in_immutables, library_private_types_in_public_api, prefer_const_constructors, avoid_print, use_build_context_synchronously
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 // Add this import
 import 'quiz_screen.dart'; // Add this import
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import
 
 class LectureScreen extends StatefulWidget {
   final String courseId;
@@ -66,20 +67,23 @@ class _LectureScreenState extends State<LectureScreen> {
     }
   }
 
-  // Convert time string to seconds
-  int _convertTimeToSeconds(String time) {
-    final parts = time.split(':');
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
-  }
-
   // Play video at specified time
-  void _playVideoAt(String time) {
-    final seconds = _convertTimeToSeconds(time);
-    final url = '$videoLink&t=$seconds';
+  void _playVideoAt(String time) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'attendedCourses': FieldValue.arrayUnion([widget.courseId]),
+        'recentLecture': '${widget.courseId}:$time',
+      });
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideoPlayerScreen(videoUrl: url),
+        builder: (context) => VideoPlayerScreen(videoUrl: '$videoLink&t=$time'),
       ),
     );
   }

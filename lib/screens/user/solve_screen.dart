@@ -1,4 +1,4 @@
-// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element
+// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element, prefer_adjacent_string_concatenation, prefer_interpolation_to_compose_strings, duplicate_import
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,6 +15,8 @@ import 'package:highlight/languages/typescript.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart'; // Import for Clipboard
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 const LANGUAGE_VERSIONS = {
   'java': '15.0.2',
@@ -34,6 +36,10 @@ class SolveScreen extends StatefulWidget {
 }
 
 class _SolveScreenState extends State<SolveScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance; // Initialize FirebaseAuth
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Initialize Firestore
+
   String selectedLanguage = 'python'; // Default language
   String code = ''; // Code input by the user
   String result = ''; // Result from the API
@@ -338,6 +344,7 @@ class _SolveScreenState extends State<SolveScreen> {
 
   void _showSubmitDialog() async {
     await _requestRating(); // Call the function to request ratings
+    await _saveSolvedProblem(); // Call the function to save the solved problem
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -836,5 +843,17 @@ class _SolveScreenState extends State<SolveScreen> {
         style: TextStyle(color: Colors.black),
       ),
     );
+  }
+
+  // Add this method to save the solved problem
+  Future<void> _saveSolvedProblem() async {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'solvedProblems': FieldValue.arrayUnion([widget.problem.id]),
+        'recentSolved':
+            widget.problem.id, // Store the most recent solved problem
+      });
+    }
   }
 }
