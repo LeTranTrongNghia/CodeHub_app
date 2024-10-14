@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:forui/forui.dart'; // Updated import
 import '../admin/admin_screen.dart';
 import '../user/home_screen.dart';
 import '../../firebase/firestore_service.dart';
@@ -170,63 +171,72 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(isLogin ? 'Login' : 'Sign Up')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            if (!isLogin)
-              TextField(
-                decoration: const InputDecoration(labelText: 'Username'),
-                onChanged: (value) {
-                  setState(() {
-                    username = value;
-                  });
-                },
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: FCard(
+            title: Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: const Center(child: Text('Login')),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0), // Inner padding
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // Minimize height
+                children: [
+                  const SizedBox(height: 20),
+                  // Updated email field using FTextField.email
+                  FTextField.email(
+                    controller: _emailController, // TextEditingController
+                    hint: 'john@doe.com',
+                  ),
+                  const SizedBox(height: 16),
+                  // Updated password field using FTextField.password
+                  FTextField.password(
+                    controller: _passwordController,
+                  ),
+                  const SizedBox(height: 30),
+                  // Replace the ElevatedButton for Sign In / Sign Up with FButton
+                  FButton(
+                    prefix: FButtonIcon(
+                        icon: FAssets.icons.logIn), // Use appropriate icon
+                    label: Text(isLogin ? 'Sign In' : 'Sign Up'),
+                    onPress: _submitAuthForm,
+                  ),
+                  const SizedBox(height: 10),
+                  // Update Google login button with FButton
+                  FButton(
+                    prefix: FButtonIcon(
+                        icon: FAssets.icons.mail), // Use appropriate icon
+                    label: const Text('Login with Google'),
+                    onPress: _signInWithGoogle,
+                  ),
+                  const SizedBox(height: 10),
+                  // Update Create new account button with FButton
+                  FButton(
+                    label: Text(isLogin
+                        ? 'Create new account'
+                        : 'I already have an account'),
+                    onPress: () {
+                      setState(() {
+                        isLogin = !isLogin; // Toggle the login state
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  if (isLogin)
+                    // Update Forgot Password button with FButton
+                    FButton(
+                      prefix: FButtonIcon(
+                          icon: FAssets.icons.lock), // Use appropriate icon
+                      label: const Text('Forgot Password?'),
+                      onPress: _resetPassword,
+                    ),
+                ],
               ),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
             ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            if (!isLogin)
-              TextField(
-                controller: _passwordController,
-                decoration:
-                    const InputDecoration(labelText: 'Confirm Password'),
-                obscureText: true,
-              ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submitAuthForm,
-              child: Text(isLogin ? 'Login' : 'Sign Up'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _signInWithGoogle,
-              child: const Text('Login with Google'),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  isLogin = !isLogin;
-                });
-              },
-              child: Text(
-                  isLogin ? 'Create new account' : 'I already have an account'),
-            ),
-            if (isLogin)
-              TextButton(
-                onPressed: _resetPassword,
-                child: const Text('Forgot Password?'),
-              ),
-          ],
+          ),
         ),
       ),
     );
