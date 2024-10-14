@@ -1,11 +1,15 @@
-// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, unnecessary_import, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:project_new/screens/user/course_screen.dart';
 import 'package:project_new/screens/user/home_screen.dart';
 import 'package:project_new/screens/user/profile_screen.dart';
 import 'solve_screen.dart';
+import 'package:forui/forui.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProblemsScreen extends StatefulWidget {
   @override
@@ -113,8 +117,17 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Problems'),
+        backgroundColor: Colors.white,
+        title: Text(
+          'Problems',
+          style: TextStyle(
+            fontSize: 24.sp,
+            fontWeight: FontWeight.w600,
+            fontFamily: GoogleFonts.workSans().fontFamily,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -125,65 +138,22 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
               );
             },
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Search',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _fetchProblems,
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: ListView.builder(
               itemCount: _filteredProblems.length,
               itemBuilder: (context, index) {
                 final problem = _filteredProblems[index];
-                final difficulty = problem['difficulty'];
-                return Card(
-                  child: ListTile(
-                    title: Text(problem['title']),
-                    subtitle: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            problem['type'],
-                            softWrap: true,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: _getDifficultyColor(difficulty),
-                            boxShadow: [_getDifficultyGlow(difficulty)],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Text(
-                              difficulty,
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 4.0, horizontal: 20.0),
+                  child: ProblemCard(
+                    problem: problem,
+                    onPress: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => SolveScreen(problem: problem),
@@ -198,29 +168,122 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Colors.black),
+            icon: Icon(Icons.home,
+                color: _selectedIndex == 0
+                    ? Colors.black
+                    : Colors.black.withOpacity(0.3)),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment, color: Colors.black),
+            icon: Icon(Icons.assignment,
+                color: _selectedIndex == 1
+                    ? Colors.black
+                    : Colors.black.withOpacity(0.3)),
             label: 'Problems',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.book, color: Colors.black),
+            icon: Icon(Icons.book,
+                color: _selectedIndex == 2
+                    ? Colors.black
+                    : Colors.black.withOpacity(0.3)),
             label: 'Courses',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Colors.black),
+            icon: Icon(Icons.person,
+                color: _selectedIndex == 3
+                    ? Colors.black
+                    : Colors.black.withOpacity(0.3)),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black.withOpacity(0.3),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w400),
         onTap: _onItemTapped,
       ),
     );
+  }
+}
+
+class ProblemCard extends StatelessWidget {
+  final DocumentSnapshot problem;
+  final VoidCallback onPress;
+
+  const ProblemCard({
+    super.key,
+    required this.problem,
+    required this.onPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPress, // Trigger the onPress callback
+      child: FCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      problem['title'],
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  FBadge(
+                    label: Text(
+                      problem['difficulty'],
+                      style: TextStyle(
+                          color: _getDifficultyColor(problem['difficulty'])),
+                    ),
+                    style: FBadgeStyle.outline,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                problem['type'],
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 4.0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Color _getDifficultyColor(String difficulty) {
+  switch (difficulty.toLowerCase()) {
+    case 'easy':
+      return Colors.green;
+    case 'medium':
+      return Colors.yellow;
+    case 'hard':
+      return Colors.red;
+    default:
+      return Colors.black;
   }
 }
 
@@ -266,35 +329,11 @@ class ProblemSearchDelegate extends SearchDelegate {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final problem = results[index];
-        final difficulty = problem['difficulty'];
-        return Card(
-          child: ListTile(
-            title: Text(problem['title']),
-            subtitle: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    problem['type'],
-                    softWrap: true,
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: _getDifficultyColor(difficulty),
-                    boxShadow: [_getDifficultyGlow(difficulty)],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Text(
-                      difficulty,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onTap: () {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 20.0),
+          child: ProblemCard(
+            problem: problem,
+            onPress: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => SolveScreen(problem: problem),
@@ -322,35 +361,11 @@ class ProblemSearchDelegate extends SearchDelegate {
       itemCount: suggestions.length,
       itemBuilder: (context, index) {
         final problem = suggestions[index];
-        final difficulty = problem['difficulty'];
-        return Card(
-          child: ListTile(
-            title: Text(problem['title']),
-            subtitle: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    problem['type'],
-                    softWrap: true,
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: _getDifficultyColor(difficulty),
-                    boxShadow: [_getDifficultyGlow(difficulty)],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Text(
-                      difficulty,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onTap: () {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 20.0),
+          child: ProblemCard(
+            problem: problem,
+            onPress: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => SolveScreen(problem: problem),
@@ -361,31 +376,5 @@ class ProblemSearchDelegate extends SearchDelegate {
         );
       },
     );
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return Colors.green;
-      case 'medium':
-        return Colors.yellow;
-      case 'hard':
-        return Colors.red;
-      default:
-        return Colors.black;
-    }
-  }
-
-  BoxShadow _getDifficultyGlow(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 10);
-      case 'medium':
-        return BoxShadow(color: Colors.yellow.withOpacity(0.5), blurRadius: 10);
-      case 'hard':
-        return BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 10);
-      default:
-        return BoxShadow(color: Colors.transparent);
-    }
   }
 }
