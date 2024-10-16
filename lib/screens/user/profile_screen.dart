@@ -77,39 +77,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  void _showEditForm(BuildContext context, Map<String, dynamic> userData) {
+  Future<List<DocumentSnapshot>> _getSolvedProblems(
+      List<String> solvedProblemIds) async {
+    final List<DocumentSnapshot> solvedProblems = [];
+    for (String id in solvedProblemIds) {
+      final DocumentSnapshot problemDoc =
+          await _firestore.collection('problems').doc(id).get();
+      if (problemDoc.exists) {
+        solvedProblems.add(problemDoc);
+      }
+    }
+    return solvedProblems;
+  }
+
+  // Add this new method to handle the username update
+  void _showEditUsernameDialog(
+      BuildContext context, Map<String, dynamic> userData) {
     final _usernameController =
         TextEditingController(text: userData['username']);
-    final _emailController = TextEditingController(text: userData['email']);
-    final _roleController = TextEditingController(text: userData['role']);
-    final _avatarController = TextEditingController(text: userData['avatar']);
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: 'Username'),
-                ),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                ),
-                TextField(
-                  controller: _roleController,
-                  decoration: const InputDecoration(labelText: 'Role'),
-                ),
-                TextField(
-                  controller: _avatarController,
-                  decoration: const InputDecoration(labelText: 'Avatar URL'),
-                ),
-              ],
-            ),
+          backgroundColor: Colors.white,
+          title: const Text('Edit Username'),
+          content: TextField(
+            controller: _usernameController,
+            decoration: const InputDecoration(labelText: 'New Username'),
           ),
           actions: [
             TextButton(
@@ -122,12 +117,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (user != null) {
                   await _firestore.collection('users').doc(user.uid).update({
                     'username': _usernameController.text,
-                    'email': _emailController.text,
-                    'role': _roleController.text,
-                    'avatar': _avatarController.text,
                     'updated_at': FieldValue.serverTimestamp(),
                   });
                   Navigator.of(context).pop();
+                  setState(
+                      () {}); // Refresh the state to reflect the new username
                 }
               },
               child: const Text('Save'),
@@ -136,19 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
-  }
-
-  Future<List<DocumentSnapshot>> _getSolvedProblems(
-      List<String> solvedProblemIds) async {
-    final List<DocumentSnapshot> solvedProblems = [];
-    for (String id in solvedProblemIds) {
-      final DocumentSnapshot problemDoc =
-          await _firestore.collection('problems').doc(id).get();
-      if (problemDoc.exists) {
-        solvedProblems.add(problemDoc);
-      }
-    }
-    return solvedProblems;
   }
 
   @override
@@ -224,35 +205,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            displayName,
-                            style: GoogleFonts.workSans(
-                              textStyle: TextStyle(
-                                fontSize: 20.sp,
-                                color: Colors.black,
-                                fontStyle: FontStyle.normal,
-                                fontWeight: FontWeight.w600,
+                          GestureDetector(
+                            onDoubleTap: () {
+                              _showEditUsernameDialog(context, userData);
+                            },
+                            child: Text(
+                              displayName,
+                              style: GoogleFonts.workSans(
+                                textStyle: TextStyle(
+                                  fontSize: 20.sp,
+                                  color: Colors.black,
+                                  fontStyle: FontStyle.normal,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              // Add any desired action here
-                            },
-                            child: Container(
-                              width: 96.r,
-                              height: 96.r,
-                              margin: EdgeInsets.only(top: 35.h, bottom: 19.h),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(96.r),
-                                color: Colors.grey,
-                                image: avatarUrl.isNotEmpty
-                                    ? DecorationImage(
-                                        image: NetworkImage(avatarUrl),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
+                          Container(
+                            width: 96.r,
+                            height: 96.r,
+                            margin: EdgeInsets.only(top: 35.h, bottom: 19.h),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(96.r),
+                              color: Colors.grey,
+                              image: avatarUrl.isNotEmpty
+                                  ? DecorationImage(
+                                      image: NetworkImage(avatarUrl),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
                           ),
                           Text(
