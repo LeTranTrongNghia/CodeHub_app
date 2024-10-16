@@ -14,7 +14,7 @@ import 'package:highlight/languages/php.dart';
 import 'package:highlight/languages/typescript.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/services.dart'; // Import for Clipboard
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -65,7 +65,9 @@ class _SolveScreenState extends State<SolveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(widget.problem['title']),
         actions: [
           IconButton(
@@ -77,6 +79,7 @@ class _SolveScreenState extends State<SolveScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
         onPressed: () {
           setState(() {
             isChatOpen = !isChatOpen; // Toggle chat visibility
@@ -112,9 +115,14 @@ class _SolveScreenState extends State<SolveScreen> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Statement: ${widget.problem['statement'] ?? 'No statement available'}',
+                    'Statement:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${widget.problem['statement'] ?? 'No statement available'}',
                     style: TextStyle(fontSize: 16),
                   ),
+                  Divider(),
                   SizedBox(height: 10),
                   Text(
                     'Constraints:',
@@ -122,18 +130,20 @@ class _SolveScreenState extends State<SolveScreen> {
                   ),
                   ..._buildConstraints(widget.problem['constraints']),
                   SizedBox(height: 10),
+                  Divider(),
                   Text(
                     'Test Cases:',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   ..._buildTestCases(widget.problem['testCases']),
-                  // Code Editor Section
-                  SizedBox(height: 20),
+                  Divider(),
+                  SizedBox(height: 10),
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween, // Aligns items
                     children: [
                       DropdownButton<String>(
+                        dropdownColor: Colors.white,
                         value: selectedLanguage,
                         onChanged: (String? newValue) {
                           if (newValue != null) {
@@ -161,6 +171,14 @@ class _SolveScreenState extends State<SolveScreen> {
                         onPressed: () async {
                           await _runCode(); // Call the function to run the code
                         },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black, // Background color
+                          foregroundColor: Colors.white, // Text color
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(4), // Corner radius
+                          ),
+                        ),
                         child: Text('Run'),
                       ),
                     ],

@@ -172,72 +172,108 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: FCard(
-            title: Padding(
-              padding: const EdgeInsets.only(top: 20.0),
-              child: const Center(child: Text('Login')),
-            ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
             child: Padding(
-              padding: const EdgeInsets.all(24.0), // Inner padding
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // Minimize height
-                children: [
-                  const SizedBox(height: 20),
-                  // Updated email field using FTextField.email
-                  FTextField.email(
-                    controller: _emailController, // TextEditingController
-                    hint: 'john@doe.com',
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: FCard(
+                title: Padding(
+                  padding: const EdgeInsets.only(top: 20.0),
+                  child: const Center(child: Text('Login')),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0), // Inner padding
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min, // Minimize height
+                    children: [
+                      const SizedBox(height: 20),
+                      FTextField.email(
+                        controller: _emailController, // TextEditingController
+                        hint: 'john@doe.com',
+                      ),
+                      const SizedBox(height: 16),
+                      FTextField.password(
+                        controller: _passwordController,
+                      ),
+                      const SizedBox(height: 30),
+                      FButton(
+                        prefix: FButtonIcon(icon: FAssets.icons.logIn),
+                        label: Text(isLogin ? 'Sign In' : 'Sign Up'),
+                        onPress: _submitAuthForm,
+                      ),
+                      const SizedBox(height: 10),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            isLogin = !isLogin;
+                          });
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(
+                                isLogin
+                                    ? 'Create new account'
+                                    : 'I already have an account',
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      InkWell(
+                        onTap: _signInWithGoogle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.mail, color: Colors.black),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: Text('Login with Google',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (isLogin)
+                        // Update Forgot Password button with InkWell and Row
+                        InkWell(
+                          onTap: _resetPassword,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.lock,
+                                  color:
+                                      Colors.black), // Use an appropriate icon
+                              Padding(
+                                padding: EdgeInsets.only(left: 8.0),
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  // Updated password field using FTextField.password
-                  FTextField.password(
-                    controller: _passwordController,
-                  ),
-                  const SizedBox(height: 30),
-                  // Replace the ElevatedButton for Sign In / Sign Up with FButton
-                  FButton(
-                    prefix: FButtonIcon(
-                        icon: FAssets.icons.logIn), // Use appropriate icon
-                    label: Text(isLogin ? 'Sign In' : 'Sign Up'),
-                    onPress: _submitAuthForm,
-                  ),
-                  const SizedBox(height: 10),
-                  // Update Google login button with FButton
-                  FButton(
-                    prefix: FButtonIcon(
-                        icon: FAssets.icons.mail), // Use appropriate icon
-                    label: const Text('Login with Google'),
-                    onPress: _signInWithGoogle,
-                  ),
-                  const SizedBox(height: 10),
-                  // Update Create new account button with FButton
-                  FButton(
-                    label: Text(isLogin
-                        ? 'Create new account'
-                        : 'I already have an account'),
-                    onPress: () {
-                      setState(() {
-                        isLogin = !isLogin; // Toggle the login state
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  if (isLogin)
-                    // Update Forgot Password button with FButton
-                    FButton(
-                      prefix: FButtonIcon(
-                          icon: FAssets.icons.lock), // Use appropriate icon
-                      label: const Text('Forgot Password?'),
-                      onPress: _resetPassword,
-                    ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

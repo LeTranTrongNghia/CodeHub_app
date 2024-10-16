@@ -91,7 +91,9 @@ class _LectureScreenState extends State<LectureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text('Lectures'),
         actions: [
           // Add this section for the quiz button
@@ -131,7 +133,14 @@ class _LectureScreenState extends State<LectureScreen> {
               itemBuilder: (context, index) {
                 final lecture = lectures[index];
                 return Card(
+                  color: Colors.white,
                   margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: Colors.grey,
+                    ),
+                  ),
                   child: ListTile(
                     title: Text(lecture['title_lecture']!),
                     subtitle: Text(lecture['time']!),
