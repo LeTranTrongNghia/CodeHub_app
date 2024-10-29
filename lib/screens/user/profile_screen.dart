@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:forui/forui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../auth/auth_screen.dart';
 import 'home_screen.dart';
 import 'lecture_screen.dart';
@@ -132,6 +133,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // Add this new method to handle the avatar update
+  void _showEditAvatarDialog(BuildContext context) {
+    final _avatarUrlController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Edit Avatar URL'),
+          content: TextField(
+            controller: _avatarUrlController,
+            decoration: const InputDecoration(labelText: 'New Avatar URL'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final User? user = _auth.currentUser;
+                if (user != null) {
+                  await _firestore.collection('users').doc(user.uid).update({
+                    'avatar': _avatarUrlController.text,
+                    'updated_at': FieldValue.serverTimestamp(),
+                  });
+                  Navigator.of(context).pop();
+                  setState(
+                      () {}); // Refresh the state to reflect the new avatar
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -162,350 +203,360 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (snapshot.hasError) {
             return const Center(child: Text('An error occurred.'));
           }
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('No user data found.'));
-          }
 
-          final userData = snapshot.data!;
-          final String displayName = userData['username'] ?? 'User';
-          final String email = userData['email'] ?? 'No email';
-          final String role = userData['role'] ?? 'N/A'; // Fetching role
+          final userData = snapshot.data ?? {};
+          final String displayName = userData['username'] ?? 'No data';
+          final String email = userData['email'] ?? 'No data';
+          final String role = userData['role'] ?? 'No data';
           final List<dynamic> solvedProblems = userData['solvedProblems'] ?? [];
           final List<dynamic> attendedCourses =
               userData['attendedCourses'] ?? [];
           final String avatarUrl = userData['avatar'] ?? '';
 
-          // Fetch solved problems based on the IDs
-          return FutureBuilder<List<DocumentSnapshot>>(
-            future: _getSolvedProblems(List<String>.from(solvedProblems)),
-            builder: (context, solvedSnapshot) {
-              if (solvedSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (solvedSnapshot.hasError) {
-                return const Center(
-                    child: Text(
-                        'An error occurred while fetching solved problems.'));
-              }
-              if (!solvedSnapshot.hasData || solvedSnapshot.data!.isEmpty) {
-                return const Center(child: Text('No solved problems found.'));
-              }
-
-              final List<DocumentSnapshot> _SolvedProblems =
-                  solvedSnapshot.data!;
-
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(
-                          left: 53.w, right: 56.w, top: 35.h, bottom: 30.h),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                      left: 53.w, right: 56.w, top: 35.h, bottom: 30.h),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onDoubleTap: () {
+                          _showEditUsernameDialog(context, userData);
+                        },
+                        child: Text(
+                          displayName.isNotEmpty ? displayName : 'Username',
+                          style: GoogleFonts.workSans(
+                            textStyle: TextStyle(
+                              fontSize: 20.sp,
+                              color: Colors.black,
+                              fontStyle: FontStyle.normal,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 96.r,
+                        height: 96.r,
+                        margin: EdgeInsets.only(top: 35.h, bottom: 19.h),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey,
+                        ),
+                        child: GestureDetector(
+                          onDoubleTap: () {
+                            _showEditAvatarDialog(context);
+                          },
+                          child: avatarUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: CachedNetworkImage(
+                                    imageUrl: avatarUrl,
+                                    placeholder: (context, url) =>
+                                        CircularProgressIndicator(),
+                                    errorWidget: (context, url, error) =>
+                                        Image.asset(
+                                            'assets/placeholder_avatar.png'),
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.person_outline,
+                                    size: 48.0, // Adjust the size as needed
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      Text(
+                        email,
+                        style: GoogleFonts.workSans(
+                          textStyle: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.black,
+                            fontStyle: FontStyle.normal,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          GestureDetector(
-                            onDoubleTap: () {
-                              _showEditUsernameDialog(context, userData);
-                            },
-                            child: Text(
-                              displayName,
-                              style: GoogleFonts.workSans(
-                                textStyle: TextStyle(
-                                  fontSize: 20.sp,
-                                  color: Colors.black,
-                                  fontStyle: FontStyle.normal,
-                                  fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  role,
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 20.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                Text(
+                                  "Role",
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Container(
-                            width: 96.r,
-                            height: 96.r,
-                            margin: EdgeInsets.only(top: 35.h, bottom: 19.h),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(96.r),
-                              color: Colors.grey,
-                              image: avatarUrl.isNotEmpty
-                                  ? DecorationImage(
-                                      image: NetworkImage(avatarUrl),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${attendedCourses.length}',
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 20.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  "Courses Attended",
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            email,
-                            style: GoogleFonts.workSans(
-                              textStyle: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.black,
-                                fontStyle: FontStyle.normal,
-                                fontWeight: FontWeight.w400,
-                              ),
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${solvedProblems.length}',
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 20.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  "Problems Solved",
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.black,
+                                      fontStyle: FontStyle.normal,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          SizedBox(height: 24.h),
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center, // Center the row
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      role,
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      "Role",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 20), // Add space between columns
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${attendedCourses.length}',
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      "Courses Attended",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 20), // Add space between columns
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${solvedProblems.length}',
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      "Problems Solved",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 20.0),
+                  child: Text(
+                    'Attended Courses',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: GoogleFonts.workSans().fontFamily,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20.0),
-                      child: Text(
-                        'Attended Courses',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: GoogleFonts.workSans().fontFamily,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20.0),
-                      child: SizedBox(
-                        width: size.width,
-                        height: 240,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              FutureBuilder<Map<String, dynamic>?>(
-                                future:
-                                    _getUserData(), // Fetch user data to get attendedCourses
-                                builder: (context, userSnapshot) {
-                                  if (userSnapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return CircularProgressIndicator();
-                                  }
-                                  if (userSnapshot.hasError ||
-                                      !userSnapshot.hasData) {
-                                    return Text("Something went wrong");
-                                  }
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                SizedBox(
+                  width: size.width,
+                  height: 240,
+                  child: attendedCourses.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 20.0),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                FutureBuilder<QuerySnapshot>(
+                                  future: FirebaseFirestore.instance
+                                      .collection('courses')
+                                      .get(),
+                                  builder: (context, courseSnapshot) {
+                                    if (courseSnapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    }
+                                    if (courseSnapshot.hasError) {
+                                      return Text("Something went wrong");
+                                    }
 
-                                  final userData = userSnapshot.data!;
-                                  final List<dynamic> attendedCourses =
-                                      userData['attendedCourses'] ?? [];
+                                    final courses = courseSnapshot.data!.docs
+                                        .where((course) {
+                                      return attendedCourses
+                                          .contains(course.id);
+                                    }).toList();
 
-                                  return FutureBuilder<QuerySnapshot>(
-                                    future: FirebaseFirestore.instance
-                                        .collection('courses')
-                                        .get(),
-                                    builder: (context, courseSnapshot) {
-                                      if (courseSnapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return CircularProgressIndicator();
-                                      }
-                                      if (courseSnapshot.hasError) {
-                                        return Text("Something went wrong");
-                                      }
-
-                                      final courses = courseSnapshot.data!.docs
-                                          .where((course) {
-                                        return attendedCourses.contains(course
-                                            .id); // Filter courses by attendedCourses
-                                      }).toList();
-
-                                      return ListView.separated(
-                                        itemCount: courses.length,
-                                        shrinkWrap: true,
-                                        scrollDirection: Axis.horizontal,
-                                        physics: NeverScrollableScrollPhysics(),
-                                        separatorBuilder: (context, index) {
-                                          return SizedBox(width: 20.h);
-                                        },
-                                        itemBuilder: (context, index) {
-                                          var course = courses[index].data()
-                                              as Map<String, dynamic>;
-                                          return GestureDetector(
-                                            onTap: () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      LectureScreen(
-                                                          courseId: courses[
-                                                                  index]
-                                                              .id), // Pass the course ID
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: 244.h,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
+                                    return ListView.separated(
+                                      itemCount: courses.length,
+                                      shrinkWrap: true,
+                                      scrollDirection: Axis.horizontal,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      separatorBuilder: (context, index) {
+                                        return SizedBox(width: 20.h);
+                                      },
+                                      itemBuilder: (context, index) {
+                                        var course = courses[index].data()
+                                            as Map<String, dynamic>;
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LectureScreen(
+                                                        courseId:
+                                                            courses[index].id),
                                               ),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Container(
-                                                    width: 244.w,
-                                                    height: 160.h,
-                                                    decoration: BoxDecoration(
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            course[
-                                                                'image_cover']),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              16),
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 8.h),
-                                                  Text(
-                                                    course[
-                                                        'title'], // Displaying title
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 4.h),
-                                                  Text(
-                                                    course[
-                                                        'author'], // Displaying author
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            width: 244.h,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
                                             ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  width: 244.w,
+                                                  height: 160.h,
+                                                  decoration: BoxDecoration(
+                                                    image: DecorationImage(
+                                                      image: NetworkImage(
+                                                          course[
+                                                              'image_cover']),
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8.h),
+                                                Text(
+                                                  course['title'],
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4.h),
+                                                Text(
+                                                  course['author'],
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Container(
+                            width: 244.h,
+                            height: 160.h,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Center(child: Text('No data')),
                           ),
                         ),
-                      ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 20.h, top: 30.h, bottom: 10.h),
+                  child: Text(
+                    'Solved Problems',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: GoogleFonts.workSans().fontFamily,
                     ),
-                    Padding(
-                      padding:
-                          EdgeInsets.only(left: 20.h, top: 30.h, bottom: 10.h),
-                      child: Text(
-                        'Solved Problems',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: GoogleFonts.workSans().fontFamily,
+                  ),
+                ),
+                solvedProblems.isNotEmpty
+                    ? FutureBuilder<List<DocumentSnapshot>>(
+                        future:
+                            _getSolvedProblems(solvedProblems.cast<String>()),
+                        builder: (context, solvedSnapshot) {
+                          if (solvedSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                          if (solvedSnapshot.hasError) {
+                            return const Center(
+                                child: Text('An error occurred.'));
+                          }
+
+                          final problems = solvedSnapshot.data ?? [];
+                          return Problems(problems: problems);
+                        },
+                      )
+                    : Center(
+                        child: Container(
+                          width: 244.h,
+                          height: 160.h,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Center(child: Text('No data')),
                         ),
                       ),
-                    ),
-                    Problems(problems: _SolvedProblems),
-                  ],
-                ),
-              );
-            },
+              ],
+            ),
           );
         },
       ),

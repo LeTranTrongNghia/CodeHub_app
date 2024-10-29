@@ -8,6 +8,8 @@ import 'package:forui/forui.dart'; // Updated import
 import '../admin/admin_screen.dart';
 import '../user/home_screen.dart';
 import '../../firebase/firestore_service.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -55,12 +57,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
         await userCredential.user!.sendEmailVerification();
 
+        // Hash the password before storing it
+        String hashedPassword = _hashPassword(_passwordController.text.trim());
+
         // Store user information in Firestore
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'id': userCredential.user!.uid,
           'username': username,
-          'email': email,
-          'password': password,
+          'email': _emailController.text.trim(),
+          'password': hashedPassword, // Store the hashed password
           'avatar': '',
           'created_at': FieldValue.serverTimestamp(),
           'updated_at': FieldValue.serverTimestamp(),
@@ -90,12 +95,11 @@ class _AuthScreenState extends State<AuthScreen> {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // Check if the user is null (sign-in was canceled)
       if (googleUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Google sign-in was canceled.')),
         );
-        return; // Exit the method if sign-in was canceled
+        return;
       }
 
       final GoogleSignInAuthentication googleAuth =
@@ -109,7 +113,6 @@ class _AuthScreenState extends State<AuthScreen> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // Retry mechanism for fetching user data
       await _fetchUserDataWithRetry(userCredential.user!.uid);
 
       Navigator.of(context).pushReplacement(
@@ -147,6 +150,8 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _resetPassword() async {
+    final email =
+        _emailController.text.trim(); // Get the email from the controller
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your email.')),
@@ -166,6 +171,13 @@ class _AuthScreenState extends State<AuthScreen> {
         const SnackBar(content: Text('An error occurred. Please try again.')),
       );
     }
+  }
+
+  // Method to hash the password
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password); // Convert password to bytes
+    final digest = sha256.convert(bytes); // Hash the password
+    return digest.toString(); // Return the hashed password as a string
   }
 
   @override
