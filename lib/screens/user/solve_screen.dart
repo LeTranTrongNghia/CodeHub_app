@@ -78,15 +78,25 @@ class _SolveScreenState extends State<SolveScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        onPressed: () {
-          setState(() {
-            isChatOpen = !isChatOpen; // Toggle chat visibility
-          });
-        },
-        child: Icon(Icons.chat),
-      ),
+      floatingActionButton: _containsError(result)
+          ? FloatingActionButton(
+              backgroundColor: Colors.red, // Red background
+              child: Icon(Icons.error, color: Colors.white), // White icon
+              onPressed: () async {
+                String solution =
+                    await _findErrorSolution(result); // Get the solution
+                _showSolutionDialog(solution); // Show the solution in a dialog
+              },
+            )
+          : FloatingActionButton(
+              backgroundColor: Colors.white,
+              onPressed: () {
+                setState(() {
+                  isChatOpen = !isChatOpen; // Toggle chat visibility
+                });
+              },
+              child: Icon(Icons.chat),
+            ), // button if no error
       body: Stack(
         children: [
           // Main content
@@ -201,13 +211,31 @@ class _SolveScreenState extends State<SolveScreen> {
                       ),
                     ),
                   ),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result), // Display the result here
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Container(
+                      width: double.infinity, // Full width
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey), // Gray border
+                        borderRadius: BorderRadius.circular(
+                            4.0), // Optional: rounded corners
+                      ),
+                      child: Card(
+                        color: Colors.white,
+                        margin: EdgeInsets.zero, // Remove default margin
+                        child: Padding(
+                          padding: const EdgeInsets.all(
+                              8.0), // Padding inside the card
+                          child: Column(
+                            children: [
+                              Text(result), // Display the result
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  // Add more fields as necessary
+                  SizedBox(height: 14),
                 ],
               ),
             ),
@@ -632,7 +660,7 @@ class _SolveScreenState extends State<SolveScreen> {
   Future<void> generateAnswer(String question) async {
     setState(() {
       chatHistory
-          .add('Gemini is thinking... \n It might take up to 10 seconds.');
+          .add('CodeHub is thinking... \n It might take up to 10 seconds.');
     });
 
     try {
@@ -667,13 +695,13 @@ class _SolveScreenState extends State<SolveScreen> {
             ['parts'][0]['text'];
         setState(() {
           chatHistory.removeLast(); // Remove the thinking message
-          chatHistory.add('Gemini: $answer');
+          chatHistory.add('CodeHub: $answer');
         });
       } else {
         setState(() {
           chatHistory.removeLast(); // Remove the thinking message
           chatHistory
-              .add('Gemini: Sorry - Something went wrong. Please try again!');
+              .add('CodeHub: Sorry - Something went wrong. Please try again!');
         });
       }
     } catch (error) {
@@ -681,15 +709,15 @@ class _SolveScreenState extends State<SolveScreen> {
       setState(() {
         chatHistory.removeLast(); // Remove the thinking message
         chatHistory
-            .add('Gemini: Sorry - Something went wrong. Please try again!');
+            .add('CodeHub: Sorry - Something went wrong. Please try again!');
       });
     }
   }
 
   Future<void> guideCode() async {
     setState(() {
-      chatHistory.add('You: Generate Guide');
-      chatHistory.add('Generating guide... \n It might take up to 10 seconds.');
+      chatHistory.add('You: Asking for Guide');
+      chatHistory.add('Thinking guide... \n It might take up to 10 seconds.');
     });
 
     try {
@@ -873,5 +901,69 @@ class _SolveScreenState extends State<SolveScreen> {
             widget.problem.id, // Store the most recent solved problem
       });
     }
+  }
+
+  Future<String> _findErrorSolution(String errorResult) async {
+    final sourceCode = code; // Get the code from the editor
+    String solution = "Could not find a solution."; // Default message
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${dotenv.env['VITE_API_GENERATIVE_LANGUAGE_CLIENT']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text':
+                      'I encountered an error while running the following code:\n\nCode:\n$sourceCode\n\nError Message:\n$errorResult\n\nPlease provide a solution or guidance by word to fix this error. Do not give me the code. Only give me hints.',
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        solution = jsonDecode(response.body)['candidates'][0]['content']
+            ['parts'][0]['text'];
+      }
+    } catch (error) {
+      print('Error while finding solution: $error');
+    }
+    return solution; // Return the solution
+  }
+
+  void _showSolutionDialog(String solution) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Solution"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(solution), // Display the solution here
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _containsError(String result) {
+    final errorKeywords = ['error', 'syntaxerror', 'nameerror'];
+    return errorKeywords
+        .any((keyword) => result.toLowerCase().contains(keyword));
   }
 }
