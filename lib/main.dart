@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUti
 import 'package:forui/forui.dart';
 import 'firebase/firebase_options.dart';
 import 'screens/auth/auth_screen.dart';
+import 'package:provider/provider.dart';
+import 'controllers/language_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +17,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const Application());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LanguageController(),
+      child: const Application(),
+    ),
+  );
 }
 
 class Application extends StatelessWidget {

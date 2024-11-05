@@ -13,6 +13,8 @@ import 'package:forui/forui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'lecture_screen.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,15 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
   int _solvedProblemsCount = 0;
   int _attendedCoursesCount = 0;
 
+  String homeLabel = 'Home';
+  String problemsLabel = 'Problems';
+  String coursesLabel = 'Courses';
+  String profileLabel = 'Profile';
+  String problemsMeasure = 'Problems';
+  String coursesMeasure = 'Courses';
+  String roleMeasure = 'Role';
+
   @override
   void initState() {
     super.initState();
     _fetchProblems();
-    getUserRole().then((role) {
-      setState(() {
-        // Update the state with the fetched role if needed
-      });
-    });
+    _fetchTranslations();
   }
 
   Future<String> getUserRole() async {
@@ -48,6 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final userData = userDoc.data();
 
     return userData?['role'] ?? 'N/A'; // Fetching role from user data
+  }
+
+  Future<String> getTranslatedUserRole() async {
+    final role = await getUserRole(); // Fetch the role
+    final languageController =
+        Provider.of<LanguageController>(context, listen: false);
+    return await languageController.translateText(role); // Translate the role
   }
 
   void _fetchProblems() async {
@@ -99,8 +112,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchTranslations() async {
+    final languageController =
+        Provider.of<LanguageController>(context, listen: false);
+    homeLabel = await languageController.translateText('Home');
+    problemsLabel = await languageController.translateText('Problems');
+    coursesLabel = await languageController.translateText('Courses');
+    profileLabel = await languageController.translateText('Profile');
+    problemsMeasure = await languageController.translateText('Problems');
+    coursesMeasure = await languageController.translateText('Courses');
+    roleMeasure = await languageController.translateText('Role');
+    setState(() {}); // Update the UI after fetching translations
+  }
+
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     Size size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -120,22 +148,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Welcome',
-                          style: TextStyle(
-                            fontSize: 24.sp,
-                            fontFamily: GoogleFonts.workSans().fontFamily,
-                          ),
+                        FutureBuilder<String>(
+                          future: languageController.translateText('Welcome'),
+                          builder: (context, snapshot) {
+                            return Text(
+                              snapshot.data ?? 'Welcome',
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                fontFamily: GoogleFonts.workSans().fontFamily,
+                              ),
+                            );
+                          },
                         ),
                         Row(
                           children: [
-                            Text(
-                              'User!',
-                              style: TextStyle(
-                                fontSize: 24.sp,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: GoogleFonts.workSans().fontFamily,
-                              ),
+                            FutureBuilder<String>(
+                              future: languageController.translateText('User!'),
+                              builder: (context, snapshot) {
+                                return Text(
+                                  snapshot.data ?? 'User!',
+                                  style: TextStyle(
+                                    fontSize: 24.sp,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily:
+                                        GoogleFonts.workSans().fontFamily,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -184,21 +223,24 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 14.h),
               Padding(
                 padding: const EdgeInsets.only(left: 20.0),
-                child: Text(
-                  'Stats',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: GoogleFonts.workSans().fontFamily,
-                  ),
+                child: FutureBuilder<String>(
+                  future: languageController.translateText('Stats'),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data ?? 'Stats',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: GoogleFonts.workSans().fontFamily,
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 12.h),
               Container(
                 width: size.width,
-                // Removed fixed height
-                padding:
-                    EdgeInsets.symmetric(vertical: 20.sp), // Adjusted padding
+                padding: EdgeInsets.symmetric(vertical: 20.sp),
                 margin: EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: Color(0xFF262626),
@@ -209,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     FutureBuilder<String>(
-                      future: getUserRole(), // Fetching role from user data
+                      future: getTranslatedUserRole(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -218,22 +260,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (snapshot.hasError) {
                           return Text("Error fetching role");
                         }
+
                         return StatsItem(
                           icon: Icons.person, // Updated icon for role
-                          value: snapshot.data ?? 'N/A', // Use fetched role
-                          measure: 'role', // Updated measure
+                          value: snapshot.data ?? 'N/A', // Use translated role
+                          measure:
+                              roleMeasure, // Use translated measure for role
                         );
                       },
                     ),
                     StatsItem(
                       icon: Icons.assignment,
                       value: '$_solvedProblemsCount',
-                      measure: 'Problems',
+                      measure: problemsMeasure,
                     ),
                     StatsItem(
                       icon: Icons.book,
                       value: '$_attendedCoursesCount',
-                      measure: 'Courses',
+                      measure: coursesMeasure,
                     ),
                   ],
                 ),
@@ -241,13 +285,18 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 35.h),
               Padding(
                 padding: const EdgeInsets.only(left: 20.0),
-                child: Text(
-                  'Featured Courses',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: GoogleFonts.workSans().fontFamily,
-                  ),
+                child: FutureBuilder<String>(
+                  future: languageController.translateText('Featured Courses'),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data ?? 'Featured Courses',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: GoogleFonts.workSans().fontFamily,
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 10.h),
@@ -286,57 +335,79 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemBuilder: (context, index) {
                               var course =
                                   courses[index].data() as Map<String, dynamic>;
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => LectureScreen(
-                                          courseId: courses[index]
-                                              .id), // Pass the course ID
+
+                              // Fetch the translated title
+                              Future<String> translatedTitle =
+                                  languageController
+                                      .translateText(course['title']);
+
+                              return FutureBuilder<String>(
+                                future: translatedTitle,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return CircularProgressIndicator();
+                                  }
+                                  if (snapshot.hasError) {
+                                    return Text("Error translating title");
+                                  }
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => LectureScreen(
+                                              courseId: courses[index]
+                                                  .id), // Pass the course ID
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 244.h,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: 244.w,
+                                            height: 160.h,
+                                            decoration: BoxDecoration(
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                    course['image_cover']),
+                                                fit: BoxFit.cover,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                          ),
+                                          SizedBox(height: 8.h),
+                                          Text(
+                                            snapshot.data ??
+                                                course[
+                                                    'title'], // Use translated title
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4.h),
+                                          Text(
+                                            course[
+                                                'author'], // Displaying author
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
-                                child: Container(
-                                  width: 244.h,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 244.w,
-                                        height: 160.h,
-                                        decoration: BoxDecoration(
-                                          image: DecorationImage(
-                                            image: NetworkImage(
-                                                course['image_cover']),
-                                            fit: BoxFit.cover,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.h),
-                                      Text(
-                                        course['title'], // Displaying title
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        course['author'], // Displaying author
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               );
                             },
                           );
@@ -350,13 +421,18 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 35.h),
               Padding(
                 padding: const EdgeInsets.only(left: 20.0),
-                child: Text(
-                  'Popular problems',
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: GoogleFonts.workSans().fontFamily,
-                  ),
+                child: FutureBuilder<String>(
+                  future: languageController.translateText('Popular problems'),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data ?? 'Popular problems',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: GoogleFonts.workSans().fontFamily,
+                      ),
+                    );
+                  },
                 ),
               ),
               PopularProblems(problems: _randomProblems),
@@ -371,28 +447,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: _selectedIndex == 0
                     ? Colors.black
                     : Colors.black.withOpacity(0.3)),
-            label: 'Home',
+            label: homeLabel, // Use pre-fetched translation
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment,
                 color: _selectedIndex == 1
                     ? Colors.black
                     : Colors.black.withOpacity(0.3)),
-            label: 'Problems',
+            label: problemsLabel, // Use pre-fetched translation
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.book,
                 color: _selectedIndex == 2
                     ? Colors.black
                     : Colors.black.withOpacity(0.3)),
-            label: 'Courses',
+            label: coursesLabel, // Use pre-fetched translation
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person,
                 color: _selectedIndex == 3
                     ? Colors.black
                     : Colors.black.withOpacity(0.3)),
-            label: 'Profile',
+            label: profileLabel, // Use pre-fetched translation
           ),
         ],
         currentIndex: _selectedIndex,
@@ -502,6 +578,8 @@ class ProblemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return GestureDetector(
       onTap: onPress, // Trigger the onPress callback
       child: FCard(
@@ -514,21 +592,51 @@ class ProblemCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      problem['title'],
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                    child: FutureBuilder<String>(
+                      future:
+                          languageController.translateText(problem['title']),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return Text("Error translating title");
+                        }
+                        return Text(
+                          snapshot.data ??
+                              problem['title'], // Use translated title
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8.0),
                   FBadge(
-                    label: Text(
-                      problem['difficulty'],
-                      style: TextStyle(
-                          color: _getDifficultyColor(problem['difficulty'])),
+                    label: FutureBuilder<String>(
+                      future: languageController
+                          .translateText(problem['difficulty']),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return Text("Error translating difficulty");
+                        }
+                        return Text(
+                          snapshot.data ??
+                              problem[
+                                  'difficulty'], // Use translated difficulty
+                          style: TextStyle(
+                            color: _getDifficultyColor(problem['difficulty']),
+                          ),
+                        );
+                      },
                     ),
                     style: FBadgeStyle.outline,
                   ),
