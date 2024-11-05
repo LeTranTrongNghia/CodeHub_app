@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:project_new/screens/user/course_screen.dart';
 import 'package:project_new/screens/user/home_screen.dart';
 import 'package:project_new/screens/user/profile_screen.dart';
@@ -10,6 +9,8 @@ import 'solve_screen.dart';
 import 'package:forui/forui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class ProblemsScreen extends StatefulWidget {
   @override
@@ -116,17 +117,27 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(
-          'Problems',
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w600,
-            fontFamily: GoogleFonts.workSans().fontFamily,
-          ),
+        title: FutureBuilder<String>(
+          future: languageController
+              .translateText('Problems'), // Translate the title
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Problems'); // Fallback text while loading
+            }
+            if (snapshot.hasError) {
+              return Text('Problems'); // Fallback text in case of error
+            }
+            return Text(
+              snapshot.data ?? 'Problems', // Use translated title
+              style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
+            );
+          },
         ),
         actions: [
           IconButton(
@@ -167,47 +178,79 @@ class _ProblemsScreenState extends State<ProblemsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home,
-                color: _selectedIndex == 0
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment,
-                color: _selectedIndex == 1
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Problems',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book,
-                color: _selectedIndex == 2
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Courses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person,
-                color: _selectedIndex == 3
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black.withOpacity(0.3),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500),
-        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w400),
-        onTap: _onItemTapped,
+      bottomNavigationBar: FutureBuilder<List<String>>(
+        future: Future.wait([
+          languageController.translateText('Home'),
+          languageController.translateText('Problems'),
+          languageController.translateText('Courses'),
+          languageController.translateText('Profile'),
+        ]),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          if (snapshot.hasError) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          final labels = snapshot.data!;
+
+          return BottomNavigationBar(
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: labels[0]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.assignment), label: labels[1]),
+              BottomNavigationBarItem(icon: Icon(Icons.book), label: labels[2]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: labels[3]),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.black,
+            unselectedItemColor: Colors.black.withOpacity(0.3),
+            backgroundColor: Colors.white,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            onTap: _onItemTapped,
+          );
+        },
       ),
     );
   }
@@ -225,6 +268,8 @@ class ProblemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return GestureDetector(
       onTap: onPress, // Trigger the onPress callback
       child: FCard(
@@ -237,21 +282,36 @@ class ProblemCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      problem['title'],
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                    child: FutureBuilder<String>(
+                      future: languageController.translateText(
+                          problem['title']), // Translate the title
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return Text("Error translating title");
+                        }
+                        return Text(
+                          snapshot.data ??
+                              problem['title'], // Use translated title
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8.0),
                   FBadge(
                     label: Text(
-                      problem['difficulty'],
+                      problem['difficulty'], // Use difficulty directly
                       style: TextStyle(
-                          color: _getDifficultyColor(problem['difficulty'])),
+                        color: _getDifficultyColor(problem['difficulty']),
+                      ),
                     ),
                     style: FBadgeStyle.outline,
                   ),

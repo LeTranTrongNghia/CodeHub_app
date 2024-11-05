@@ -3,11 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:forui/forui.dart';
 import 'home_screen.dart';
 import 'lecture_screen.dart';
 import 'problems_screen.dart';
 import 'profile_screen.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class CourseScreen extends StatefulWidget {
   @override
@@ -93,22 +96,28 @@ class _CourseScreenState extends State<CourseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search courses...',
-                  border: InputBorder.none,
-                ),
-                style: TextStyle(
-                    color: Colors.black), // Set search text color to black
-                cursorColor: Colors.black, // Set cursor color to black
-              )
-            : Text('Courses'),
+        title: FutureBuilder<String>(
+          future: languageController
+              .translateText('Courses'), // Translate the title
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Courses'); // Fallback text while loading
+            }
+            if (snapshot.hasError) {
+              return Text('Courses'); // Fallback text in case of error
+            }
+            return Text(
+              snapshot.data ?? 'Courses', // Use translated title
+              style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
@@ -142,14 +151,37 @@ class _CourseScreenState extends State<CourseScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Text(
-                                  course['title'],
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
-                                  softWrap: true,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
+                                child: FutureBuilder<String>(
+                                  future: languageController.translateText(course[
+                                      'title']), // Translate the course title
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Text(course['title'],
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight
+                                                  .bold)); // Fallback text while loading
+                                    }
+                                    if (snapshot.hasError) {
+                                      return Text(course['title'],
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight
+                                                  .bold)); // Fallback text in case of error
+                                    }
+                                    return Text(
+                                      snapshot.data ??
+                                          course[
+                                              'title'], // Use translated title
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                      softWrap: true,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    );
+                                  },
                                 ),
                               ),
                               Container(
@@ -181,7 +213,6 @@ class _CourseScreenState extends State<CourseScreen> {
                             ),
                             child: GestureDetector(
                               onTap: () {
-                                // Navigate to LectureScreen instead of launching the URL
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => LectureScreen(
@@ -210,47 +241,79 @@ class _CourseScreenState extends State<CourseScreen> {
                 );
               },
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home,
-                color: _selectedIndex == 0
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment,
-                color: _selectedIndex == 1
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Problems',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book,
-                color: _selectedIndex == 2
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Courses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person,
-                color: _selectedIndex == 3
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black.withOpacity(0.3),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500),
-        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w400),
-        onTap: _onItemTapped,
+      bottomNavigationBar: FutureBuilder<List<String>>(
+        future: Future.wait([
+          languageController.translateText('Home'),
+          languageController.translateText('Problems'),
+          languageController.translateText('Courses'),
+          languageController.translateText('Profile'),
+        ]),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          if (snapshot.hasError) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          final labels = snapshot.data!;
+
+          return BottomNavigationBar(
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: labels[0]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.assignment), label: labels[1]),
+              BottomNavigationBarItem(icon: Icon(Icons.book), label: labels[2]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: labels[3]),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.black,
+            unselectedItemColor: Colors.black.withOpacity(0.3),
+            backgroundColor: Colors.white,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            onTap: _onItemTapped,
+          );
+        },
       ),
     );
   }

@@ -1,4 +1,4 @@
-// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element, prefer_adjacent_string_concatenation, prefer_interpolation_to_compose_strings, duplicate_import
+// ignore_for_file: use_super_parameters, prefer_const_constructors, unused_import, must_be_immutable, depend_on_referenced_packages, implementation_imports, constant_identifier_names, prefer_const_constructors_in_immutables, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element, prefer_adjacent_string_concatenation, prefer_interpolation_to_compose_strings, duplicate_import, unnecessary_string_interpolations
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,6 +17,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 const LANGUAGE_VERSIONS = {
   'java': '15.0.2',
@@ -64,17 +66,26 @@ class _SolveScreenState extends State<SolveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(widget.problem['title']),
+        title: FutureBuilder<String>(
+          future: languageController.translateText(widget.problem['title']),
+          builder: (context, snapshot) {
+            return Text(
+              snapshot.data ??
+                  widget.problem['title'], // Fallback to original title
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.check),
-            onPressed: isSubmitEnabled
-                ? _showSubmitDialog
-                : null, // Show dialog if enabled
+            onPressed: isSubmitEnabled ? _showSubmitDialog : null,
           ),
         ],
       ),
@@ -106,46 +117,79 @@ class _SolveScreenState extends State<SolveScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Title: ${widget.problem['title']}',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  FutureBuilder<String>(
+                    future: languageController.translateText('Type:'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data ?? 'Type:'} ${widget.problem['type']}',
+                        style: TextStyle(fontSize: 18),
+                      );
+                    },
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    'Type: ${widget.problem['type']}',
-                    style: TextStyle(fontSize: 18),
+                  FutureBuilder<String>(
+                    future: languageController.translateText('Difficulty:'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data ?? 'Difficulty:'} ${widget.problem['difficulty']}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color:
+                              _getDifficultyColor(widget.problem['difficulty']),
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    'Difficulty: ${widget.problem['difficulty']}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: _getDifficultyColor(widget.problem['difficulty']),
-                    ),
+                  FutureBuilder<String>(
+                    future: languageController.translateText('Statement:'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data ?? 'Statement:'}',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Statement:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${widget.problem['statement'] ?? 'No statement available'}',
-                    style: TextStyle(fontSize: 16),
+                  FutureBuilder<String>(
+                    future: languageController.translateText(
+                        widget.problem['statement'] ??
+                            'No statement available'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        snapshot.data ??
+                            'No statement available', // Fallback text
+                        style: TextStyle(fontSize: 16),
+                      );
+                    },
                   ),
                   Divider(),
                   SizedBox(height: 10),
-                  Text(
-                    'Constraints:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  FutureBuilder<String>(
+                    future: languageController.translateText('Constraints:'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data ?? 'Constraints:'}',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
                   ..._buildConstraints(widget.problem['constraints']),
                   SizedBox(height: 10),
                   Divider(),
-                  Text(
-                    'Test Cases:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  FutureBuilder<String>(
+                    future: languageController.translateText('Test Cases:'),
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data ?? 'Test Cases:'}',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
-                  ..._buildTestCases(widget.problem['testCases']),
+                  ..._buildTestCases(
+                      widget.problem['testCases'], languageController),
                   Divider(),
                   SizedBox(height: 10),
                   Row(
@@ -606,7 +650,8 @@ class _SolveScreenState extends State<SolveScreen> {
         .toList();
   }
 
-  List<Widget> _buildTestCases(List<dynamic> testCases) {
+  List<Widget> _buildTestCases(
+      List<dynamic> testCases, LanguageController languageController) {
     if (testCases.isEmpty) {
       return [Text('No test cases available')];
     }
@@ -620,7 +665,17 @@ class _SolveScreenState extends State<SolveScreen> {
               style: TextStyle(fontWeight: FontWeight.bold)),
           Text('Input: ${testCase['inputText']}'),
           Text('Output: ${testCase['outputText']}'),
-          Text('Explanation: ${testCase['explanation']}'),
+          FutureBuilder<String>(
+            future: languageController
+                .translateText('Explanation: ${testCase['explanation']}'),
+            builder: (context, snapshot) {
+              return Text(
+                snapshot.data ??
+                    'Explanation: ${testCase['explanation']}', // Fallback text
+                style: TextStyle(fontSize: 16),
+              );
+            },
+          ),
           SizedBox(height: 10),
         ],
       );

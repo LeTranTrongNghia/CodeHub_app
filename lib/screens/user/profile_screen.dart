@@ -12,6 +12,8 @@ import 'lecture_screen.dart';
 import 'problems_screen.dart';
 import 'course_screen.dart';
 import 'solve_screen.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -134,13 +136,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    final languageController = Provider.of<LanguageController>(context);
+    final size = MediaQuery.of(context).size; // Get the screen size
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Profile Screen'),
+        title: FutureBuilder<String>(
+          future: languageController.translateText('Profile Screen'),
+          builder: (context, snapshot) {
+            return Text(
+              snapshot.data ?? 'Profile Screen', // Fallback to original title
+              style: TextStyle(color: Colors.black),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -209,16 +220,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onDoubleTap: () {
                               _showEditUsernameDialog(context, userData);
                             },
-                            child: Text(
-                              displayName,
-                              style: GoogleFonts.workSans(
-                                textStyle: TextStyle(
-                                  fontSize: 20.sp,
-                                  color: Colors.black,
-                                  fontStyle: FontStyle.normal,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            child: FutureBuilder<String>(
+                              future:
+                                  languageController.translateText(displayName),
+                              builder: (context, snapshot) {
+                                return Text(
+                                  snapshot.data ??
+                                      displayName, // Fallback to original displayName
+                                  style: GoogleFonts.workSans(
+                                    textStyle: TextStyle(
+                                      fontSize: 20.sp,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           Container(
@@ -236,16 +253,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   : null,
                             ),
                           ),
-                          Text(
-                            email,
-                            style: GoogleFonts.workSans(
-                              textStyle: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.black,
-                                fontStyle: FontStyle.normal,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
+                          FutureBuilder<String>(
+                            future: languageController.translateText(email),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.data ??
+                                    email, // Fallback to original email
+                                style: GoogleFonts.workSans(
+                                  textStyle: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           SizedBox(height: 24.h),
                           Row(
@@ -258,58 +280,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      role,
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                    FutureBuilder<String>(
+                                      future: languageController
+                                          .translateText(role),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              role, // Fallback to original role
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 20.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                    Text(
-                                      "Role",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 20), // Add space between columns
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${attendedCourses.length}',
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      "Courses Attended",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
+                                    FutureBuilder<String>(
+                                      future: languageController
+                                          .translateText("Role"),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              "Role", // Fallback to original "Role"
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -320,27 +323,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      '${solvedProblems.length}',
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 20.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                    FutureBuilder<String>(
+                                      future: languageController.translateText(
+                                          '${attendedCourses.length}'),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              '${attendedCourses.length}', // Fallback to original count
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 20.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                    Text(
-                                      "Problems Solved",
-                                      style: GoogleFonts.workSans(
-                                        textStyle: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black,
-                                          fontStyle: FontStyle.normal,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
+                                    FutureBuilder<String>(
+                                      future: languageController
+                                          .translateText("Courses Attended"),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              "Courses Attended", // Fallback to original "Courses Attended"
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 20), // Add space between columns
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    FutureBuilder<String>(
+                                      future: languageController.translateText(
+                                          '${solvedProblems.length}'),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              '${solvedProblems.length}', // Fallback to original count
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 20.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    FutureBuilder<String>(
+                                      future: languageController
+                                          .translateText("Problems Solved"),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          snapshot.data ??
+                                              "Problems Solved", // Fallback to original "Problems Solved"
+                                          style: GoogleFonts.workSans(
+                                            textStyle: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -352,13 +410,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 20.0),
-                      child: Text(
-                        'Attended Courses',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: GoogleFonts.workSans().fontFamily,
-                        ),
+                      child: FutureBuilder<String>(
+                        future: languageController.translateText(
+                            'Attended Courses'), // Translate "Attended Courses"
+                        builder: (context, snapshot) {
+                          return Text(
+                            snapshot.data ??
+                                'Attended Courses', // Fallback text
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: GoogleFonts.workSans().fontFamily,
+                            ),
+                          );
+                        },
                       ),
                     ),
                     SizedBox(height: 10.h),
@@ -456,14 +521,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                     ),
                                                   ),
                                                   SizedBox(height: 8.h),
-                                                  Text(
-                                                    course[
-                                                        'title'], // Displaying title
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
+                                                  FutureBuilder<String>(
+                                                    future: languageController
+                                                        .translateText(course[
+                                                            'title']), // Translate course title
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      return Text(
+                                                        snapshot.data ??
+                                                            course[
+                                                                'title'], // Fallback to original title
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      );
+                                                    },
                                                   ),
                                                   SizedBox(height: 4.h),
                                                   Text(
@@ -492,16 +566,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Padding(
                       padding:
                           EdgeInsets.only(left: 20.h, top: 30.h, bottom: 10.h),
-                      child: Text(
-                        'Solved Problems',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: GoogleFonts.workSans().fontFamily,
-                        ),
+                      child: FutureBuilder<String>(
+                        future: languageController.translateText(
+                            'Solved Problems'), // Translate "Solved Problems"
+                        builder: (context, snapshot) {
+                          return Text(
+                            snapshot.data ?? 'Solved Problems', // Fallback text
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: GoogleFonts.workSans().fontFamily,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    Problems(problems: _SolvedProblems),
+                    Problems(
+                        problems:
+                            _SolvedProblems), // Pass the list of solved problems
                   ],
                 ),
               );
@@ -509,47 +591,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home,
-                color: _selectedIndex == 0
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment,
-                color: _selectedIndex == 1
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Problems',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book,
-                color: _selectedIndex == 2
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Courses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person,
-                color: _selectedIndex == 3
-                    ? Colors.black
-                    : Colors.black.withOpacity(0.3)),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black.withOpacity(0.3),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500),
-        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w400),
-        onTap: _onItemTapped,
+      bottomNavigationBar: FutureBuilder<List<String>>(
+        future: Future.wait([
+          languageController.translateText('Home'),
+          languageController.translateText('Problems'),
+          languageController.translateText('Courses'),
+          languageController.translateText('Profile'),
+        ]),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          if (snapshot.hasError) {
+            return BottomNavigationBar(
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.assignment), label: 'Problems'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.book), label: 'Courses'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              currentIndex: _selectedIndex,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black.withOpacity(0.3),
+              backgroundColor: Colors.white,
+              type: BottomNavigationBarType.fixed,
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              onTap: _onItemTapped,
+            );
+          }
+
+          final labels = snapshot.data!;
+
+          return BottomNavigationBar(
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: labels[0]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.assignment), label: labels[1]),
+              BottomNavigationBarItem(icon: Icon(Icons.book), label: labels[2]),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: labels[3]),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.black,
+            unselectedItemColor: Colors.black.withOpacity(0.3),
+            backgroundColor: Colors.white,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            onTap: _onItemTapped,
+          );
+        },
       ),
     );
   }
@@ -562,6 +676,8 @@ class Problems extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return Column(
       children: [
         const SizedBox(height: 10.0),
@@ -604,6 +720,8 @@ class ProblemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageController = Provider.of<LanguageController>(context);
+
     return GestureDetector(
       onTap: onPress, // Trigger the onPress callback
       child: FCard(
@@ -616,13 +734,20 @@ class ProblemCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      problem['title'],
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                    child: FutureBuilder<String>(
+                      future: languageController.translateText(
+                          problem['title']), // Translate problem title
+                      builder: (context, snapshot) {
+                        return Text(
+                          snapshot.data ??
+                              problem['title'], // Fallback to original title
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8.0),
@@ -637,12 +762,19 @@ class ProblemCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4.0),
-              Text(
-                problem['type'],
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
+              FutureBuilder<String>(
+                future: languageController
+                    .translateText(problem['type']), // Translate problem type
+                builder: (context, snapshot) {
+                  return Text(
+                    snapshot.data ??
+                        problem['type'], // Fallback to original type
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 4.0),
             ],
