@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, prefer_const_constructors, unused_import, prefer_const_literals_to_create_immutables, unnecessary_import
+// ignore_for_file: library_private_types_in_public_api, prefer_const_constructors, unused_import, prefer_const_literals_to_create_immutables, unnecessary_import, use_build_context_synchronously
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -593,8 +593,8 @@ class ProblemCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: FutureBuilder<String>(
-                      future:
-                          languageController.translateText(problem['title']),
+                      future: languageController.translateText(
+                          problem['title']), // Translate the title
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -617,26 +617,11 @@ class ProblemCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8.0),
                   FBadge(
-                    label: FutureBuilder<String>(
-                      future: languageController
-                          .translateText(problem['difficulty']),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-                        if (snapshot.hasError) {
-                          return Text("Error translating difficulty");
-                        }
-                        return Text(
-                          snapshot.data ??
-                              problem[
-                                  'difficulty'], // Use translated difficulty
-                          style: TextStyle(
-                            color: _getDifficultyColor(problem['difficulty']),
-                          ),
-                        );
-                      },
+                    label: Text(
+                      problem['difficulty'], // Use difficulty directly
+                      style: TextStyle(
+                        color: _getDifficultyColor(problem['difficulty']),
+                      ),
                     ),
                     style: FBadgeStyle.outline,
                   ),

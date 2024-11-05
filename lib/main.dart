@@ -1,9 +1,10 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
-import 'package:flutter_localizations/flutter_localizations.dart'; // Import localizations
-import 'package:intl/intl.dart'; // Import intl
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
 import 'firebase/firebase_options.dart';
 import 'screens/auth/auth_screen.dart';
@@ -59,7 +60,8 @@ class Application extends StatelessWidget {
           ],
 
           // Optionally: Set initial locale based on user preferences or system settings
-          locale: Locale('vi'), // Set default locale to Vietnamese (optional)
+          locale:
+              const Locale('vi'), // Set default locale to Vietnamese (optional)
         );
       },
     );

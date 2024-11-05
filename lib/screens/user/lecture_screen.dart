@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-// Add this import
-import 'quiz_screen.dart'; // Add this import
-import 'package:firebase_auth/firebase_auth.dart'; // Add this import
+import 'quiz_screen.dart';
 
 class LectureScreen extends StatefulWidget {
   final String courseId;
@@ -38,7 +36,6 @@ class _LectureScreenState extends State<LectureScreen> {
 
     if (data != null) {
       setState(() {
-
         videoLink = data['video_link'];
         // Safely convert lectures to List<Map<String, String>>
         lectures = List<Map<String, String>>.from(
@@ -69,7 +66,7 @@ class _LectureScreenState extends State<LectureScreen> {
 
   // Hàm phát video tại thời gian cụ thể
   void _playVideoAt(String startTime) {
-    final duration = _parseDuration(startTime); 
+    final duration = _parseDuration(startTime);
     _controller.seekTo(duration);
   }
 
