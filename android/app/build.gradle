@@ -6,9 +6,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.project_new"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    testNamespace = "com.flutter_webview_plugin"
+    // Chọn một namespace cho dự án của bạn
+    namespace = "com.example.project_new"  // Thay đổi namespace theo dự án của bạn
+    compileSdk = 34 // Nâng cấp phiên bản SDK
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -16,24 +17,19 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.project_new"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 23
+        targetSdk = 34 // Nâng cấp target SDK để phù hợp với yêu cầu plugin
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
         }
     }

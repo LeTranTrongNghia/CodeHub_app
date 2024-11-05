@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       Container(
                                         width: 244.w,
-                                        height: 160.h,
+                                        height: 130.h,
                                         decoration: BoxDecoration(
                                           image: DecorationImage(
                                             image: NetworkImage(
