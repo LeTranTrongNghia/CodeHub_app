@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-// Add this import
-import 'quiz_screen.dart'; // Add this import
-import 'package:firebase_auth/firebase_auth.dart'; // Add this import
+import 'quiz_screen.dart';
 
 class LectureScreen extends StatefulWidget {
   final String courseId;
@@ -39,7 +37,6 @@ class _LectureScreenState extends State<LectureScreen> {
     if (data != null) {
       setState(() {
         videoLink = data['video_link'];
-
         // Safely convert lectures to List<Map<String, String>>
         lectures = List<Map<String, String>>.from(
           (data['lectures'] as List<dynamic>).map((item) {
@@ -67,25 +64,24 @@ class _LectureScreenState extends State<LectureScreen> {
     }
   }
 
-  // Play video at specified time
-  void _playVideoAt(String time) async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({
-        'attendedCourses': FieldValue.arrayUnion([widget.courseId]),
-        'recentLecture': '${widget.courseId}:$time',
-      });
-    }
+  // Hàm phát video tại thời gian cụ thể
+  void _playVideoAt(String startTime) {
+    final duration = _parseDuration(startTime);
+    _controller.seekTo(duration);
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VideoPlayerScreen(videoUrl: '$videoLink&t=$time'),
-      ),
-    );
+  // Hàm chuyển đổi thời gian thành Duration
+  Duration _parseDuration(String time) {
+    final parts = time.split(':').map(int.parse).toList();
+    if (parts.length == 1) {
+      return Duration(seconds: parts[0]);
+    } else if (parts.length == 2) {
+      return Duration(minutes: parts[0], seconds: parts[1]);
+    } else if (parts.length == 3) {
+      return Duration(hours: parts[0], minutes: parts[1], seconds: parts[2]);
+    } else {
+      return Duration.zero;
+    }
   }
 
   @override

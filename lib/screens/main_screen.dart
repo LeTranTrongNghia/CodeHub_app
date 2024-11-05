@@ -1,14 +1,21 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth/auth_screen.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class MainScreen extends StatelessWidget {
   final _auth = FirebaseAuth.instance;
 
   MainScreen({super.key});
 
+  late LanguageController _languageController;
+
   @override
   Widget build(BuildContext context) {
+    _languageController = Provider.of<LanguageController>(context);
     final User? user = _auth.currentUser;
     final String? displayName = user?.email?.split('@')[0];
     const String defaultPhotoURL =
@@ -53,10 +60,29 @@ class MainScreen extends StatelessWidget {
                           backgroundImage: NetworkImage(photoURL),
                         ),
                         const SizedBox(height: 20),
-                        Text(
-                          'Hi, $displayName!\nWelcome back to CodeHub',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 24),
+                        FutureBuilder<List<String>>(
+                          future: Future.wait([
+                            _languageController.translateText('hi'),
+                            _languageController.translateText('welcome_back'),
+                          ]),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const CircularProgressIndicator(); // Show a loading indicator while fetching
+                            }
+                            if (snapshot.hasError) {
+                              return Text(
+                                  'Error: ${snapshot.error}'); // Handle error
+                            }
+                            final hiText = snapshot.data?[0] ?? 'Hi';
+                            final welcomeBackText =
+                                snapshot.data?[1] ?? 'Welcome back to CodeHub';
+                            return Text(
+                              '$hiText, $displayName!\n$welcomeBackText',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 24),
+                            );
+                          },
                         ),
                       ],
                     ),

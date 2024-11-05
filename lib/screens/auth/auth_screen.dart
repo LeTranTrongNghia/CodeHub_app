@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print, prefer_const_constructors, unused_import, use_rethrow_when_possible
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, avoid_print, prefer_const_constructors, unused_import, use_rethrow_when_possible, unused_field
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +8,11 @@ import 'package:forui/forui.dart'; // Updated import
 import '../admin/admin_screen.dart';
 import '../user/home_screen.dart';
 import '../../firebase/firestore_service.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:translator/translator.dart';
+import '../../controllers/language_controller.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -26,6 +31,25 @@ class _AuthScreenState extends State<AuthScreen> {
   String confirmPassword = '';
   String username = '';
   bool isLogin = true;
+
+  // Add translation state
+  late LanguageController _languageController;
+
+  bool isEnglish = true; // Track the current language state
+
+  @override
+  void initState() {
+    super.initState();
+    _languageController =
+        Provider.of<LanguageController>(context, listen: false);
+  }
+
+  void _toggleLanguage() {
+    setState(() {
+      isEnglish = !isEnglish; // Toggle the language state
+      _languageController.toggleLanguage(); // Call the language toggle method
+    });
+  }
 
   void _submitAuthForm() async {
     UserCredential userCredential;
@@ -55,12 +79,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
         await userCredential.user!.sendEmailVerification();
 
+        // Hash the password before storing it
+        String hashedPassword = _hashPassword(_passwordController.text.trim());
+
         // Store user information in Firestore
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'id': userCredential.user!.uid,
           'username': username,
-          'email': email,
-          'password': password,
+          'email': _emailController.text.trim(),
+          'password': hashedPassword, // Store the hashed password
           'avatar': '',
           'created_at': FieldValue.serverTimestamp(),
           'updated_at': FieldValue.serverTimestamp(),
@@ -90,12 +117,11 @@ class _AuthScreenState extends State<AuthScreen> {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // Check if the user is null (sign-in was canceled)
       if (googleUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Google sign-in was canceled.')),
         );
-        return; // Exit the method if sign-in was canceled
+        return;
       }
 
       final GoogleSignInAuthentication googleAuth =
@@ -109,7 +135,6 @@ class _AuthScreenState extends State<AuthScreen> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // Retry mechanism for fetching user data
       await _fetchUserDataWithRetry(userCredential.user!.uid);
 
       Navigator.of(context).pushReplacement(
@@ -147,6 +172,8 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _resetPassword() async {
+    final email =
+        _emailController.text.trim(); // Get the email from the controller
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your email.')),
@@ -168,112 +195,174 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  // Method to hash the password
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password); // Convert password to bytes
+    final digest = sha256.convert(bytes); // Hash the password
+    return digest.toString(); // Return the hashed password as a string
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: FCard(
-                title: Padding(
-                  padding: const EdgeInsets.only(top: 20.0),
-                  child: const Center(child: Text('Login')),
-                ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(isEnglish
+                ? Icons.language
+                : Icons.translate), // Change icon based on state
+            onPressed: _toggleLanguage, // Use the new method
+          ),
+        ],
+      ),
+      body: Consumer<LanguageController>(
+        builder: (context, languageController, child) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0), // Inner padding
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min, // Minimize height
-                    children: [
-                      const SizedBox(height: 20),
-                      FTextField.email(
-                        controller: _emailController, // TextEditingController
-                        hint: 'john@doe.com',
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: FCard(
+                    title: Padding(
+                      padding: const EdgeInsets.only(top: 20.0),
+                      child: Center(
+                        child: FutureBuilder<String>(
+                          future: languageController.translateText('Login'),
+                          builder: (context, snapshot) {
+                            return Text(snapshot.data ?? 'Login');
+                          },
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      FTextField.password(
-                        controller: _passwordController,
-                      ),
-                      const SizedBox(height: 30),
-                      FButton(
-                        prefix: FButtonIcon(icon: FAssets.icons.logIn),
-                        label: Text(isLogin ? 'Sign In' : 'Sign Up'),
-                        onPress: _submitAuthForm,
-                      ),
-                      const SizedBox(height: 10),
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            isLogin = !isLogin;
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Text(
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 20),
+                          FTextField.email(
+                            controller: _emailController,
+                            hint: 'john@doe.com',
+                          ),
+                          const SizedBox(height: 16),
+                          FutureBuilder<String>(
+                            future:
+                                languageController.translateText('Password'),
+                            builder: (context, snapshot) {
+                              return FTextField.password(
+                                controller: _passwordController,
+                                hint: snapshot.data ??
+                                    'Password', // Add hint for password
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 30),
+                          FutureBuilder<String>(
+                            future: languageController
+                                .translateText(isLogin ? 'Sign In' : 'Sign Up'),
+                            builder: (context, snapshot) {
+                              return FButton(
+                                prefix: FButtonIcon(icon: FAssets.icons.logIn),
+                                label: Text(snapshot.data ??
+                                    (isLogin ? 'Sign In' : 'Sign Up')),
+                                onPress: _submitAuthForm,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                isLogin = !isLogin;
+                              });
+                            },
+                            child: FutureBuilder<String>(
+                              future: languageController.translateText(
                                 isLogin
                                     ? 'Create new account'
                                     : 'I already have an account',
-                                style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold),
                               ),
+                              builder: (context, snapshot) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Text(
+                                    snapshot.data ??
+                                        (isLogin
+                                            ? 'Create new account'
+                                            : 'I already have an account'),
+                                    style: const TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                );
+                              },
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      InkWell(
-                        onTap: _signInWithGoogle,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.mail, color: Colors.black),
-                            Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              child: Text('Login with Google',
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (isLogin)
-                        // Update Forgot Password button with InkWell and Row
-                        InkWell(
-                          onTap: _resetPassword,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.lock,
-                                  color:
-                                      Colors.black), // Use an appropriate icon
-                              Padding(
-                                padding: EdgeInsets.only(left: 8.0),
-                                child: Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                    ],
+                          const SizedBox(height: 20),
+                          InkWell(
+                            onTap: _signInWithGoogle,
+                            child: FutureBuilder<String>(
+                              future: languageController
+                                  .translateText('Login with Google'),
+                              builder: (context, snapshot) {
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.mail, color: Colors.black),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8.0),
+                                      child: Text(
+                                        snapshot.data ?? 'Login with Google',
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          if (isLogin)
+                            InkWell(
+                              onTap: _resetPassword,
+                              child: FutureBuilder<String>(
+                                future: languageController
+                                    .translateText('Forgot Password?'),
+                                builder: (context, snapshot) {
+                                  return Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.lock,
+                                          color: Colors.black),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 8.0),
+                                        child: Text(
+                                          snapshot.data ?? 'Forgot Password?',
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

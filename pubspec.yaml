@@ -49,6 +49,10 @@ dependencies:
   carousel_slider: ^5.0.0
   flutter_screenutil: ^5.9.3
   google_fonts: ^6.2.1
+  crypto: ^3.0.6
+  http: ^1.2.2
+  provider: ^6.1.2
+  translator: ^1.0.0
 
 dev_dependencies:
   flutter_test:

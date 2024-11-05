@@ -1,10 +1,15 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:forui/forui.dart';
 import 'firebase/firebase_options.dart';
 import 'screens/auth/auth_screen.dart';
+import 'package:provider/provider.dart';
+import 'controllers/language_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +20,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const Application());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LanguageController(),
+      child: const Application(),
+    ),
+  );
 }
 
 class Application extends StatelessWidget {
@@ -35,6 +45,23 @@ class Application extends StatelessWidget {
           ),
           home: const AuthScreen(),
           debugShowCheckedModeBanner: false,
+
+          // Add localization support
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+
+          // Define supported locales
+          supportedLocales: const [
+            Locale('en', ''), // English
+            Locale('vi', ''), // Vietnamese
+          ],
+
+          // Optionally: Set initial locale based on user preferences or system settings
+          locale:
+              const Locale('vi'), // Set default locale to Vietnamese (optional)
         );
       },
     );
